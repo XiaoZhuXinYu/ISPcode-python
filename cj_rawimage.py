@@ -3,6 +3,107 @@ import math
 from matplotlib import pyplot as plt
 
 
+def read_plained_file(file_path_name, dtype, width, height,  shift_bits):
+    frame = np.fromfile(file_path_name, dtype=dtype)  # 相比于open，该函数可以指定数据类型
+    # print("b shape",b.shape)
+    # print('%#x'%b[0])
+    frame = frame[0:height * width]  # 这句是为了防止图像中有无效数据
+    frame.shape = [height, width]  # 将数组转化为二维矩阵
+    frame = np.right_shift(frame, shift_bits)  # 考虑数据大小端问题，进行移位
+    return frame
+
+
+def write_plained_file(file_path_name, image, dtype):
+    if dtype == "uint8":
+        image = image.astype(np.uint8)
+    elif dtype == "uint16":
+        image = image.astype(np.uint16)
+    frame = image.tofile(file_path_name)
+    return
+
+
+# 非弱拷贝分离,没带颜色通道
+def simple_separation(image):
+    C1 = image[::2, ::2]
+    C2 = image[::2, 1::2]
+    C3 = image[1::2, 0::2]
+    C4 = image[1::2, 1::2]
+    return C1, C2, C3, C4
+
+
+# 带颜色通道的分离
+def bayer_channel_separation(data, pattern):
+    image_data = data
+    if pattern == "RGGB":
+        R = image_data[::2, ::2]
+        GR = image_data[::2, 1::2]
+        GB = image_data[1::2, ::2]
+        B = image_data[1::2, 1::2]
+    elif pattern == "GRBG":
+        GR = image_data[::2, ::2]
+        R = image_data[::2, 1::2]
+        B = image_data[1::2, ::2]
+        GB = image_data[1::2, 1::2]
+    elif pattern == "GBRG":
+        GB = image_data[::2, ::2]
+        B = image_data[::2, 1::2]
+        R = image_data[1::2, ::2]
+        GR = image_data[1::2, 1::2]
+    elif pattern == "BGGR":
+        B = image_data[::2, ::2]
+        GB = image_data[::2, 1::2]
+        GR = image_data[1::2, ::2]
+        R = image_data[1::2, 1::2]
+    else:
+        print("pattern must be one of :  RGGB, GBRG, GBRG, or BGGR")
+        return
+
+    return R, GR, GB, B
+
+
+# 合成
+def simple_integration(C1, C2, C3, C4):
+    size = np.shape(C1)
+    data = np.empty((size[0] * 2, size[1] * 2), dtype=np.float32)
+    data[::2, ::2] = C1
+    data[::2, 1::2] = C2
+    data[1::2, ::2] = C3
+    data[1::2, 1::2] = C4
+    return data
+
+
+# 按照颜色根据不同的bayer合成
+def bayer_channel_integration(R, GR, GB, B, pattern):
+    size = np.shape(R)
+    data = np.empty((size[0] * 2, size[1] * 2), dtype=np.float32)
+    # casually use float32,maybe change later
+    if pattern == "RGGB":
+        data[::2, ::2] = R
+        data[::2, 1::2] = GR
+        data[1::2, ::2] = GB
+        data[1::2, 1::2] = B
+    elif pattern == "GRBG":
+        data[::2, ::2] = GR
+        data[::2, 1::2] = R
+        data[1::2, ::2] = B
+        data[1::2, 1::2] = GB
+    elif pattern == "GBRG":
+        data[::2, ::2] = GB
+        data[::2, 1::2] = B
+        data[1::2, ::2] = R
+        data[1::2, 1::2] = GR
+    elif pattern == "bggr":
+        data[::2, ::2] = B
+        data[::2, 1::2] = GB
+        data[1::2, ::2] = GR
+        data[1::2, 1::2] = R
+    else:
+        print("pattern must be one of these: rggb, grbg, gbrg, bggr")
+        return
+
+    return data
+
+
 def raw_image_show_gray(image,  width, height, compress_ratio=1):
     x = width/(compress_ratio * 100)
     y = height/(compress_ratio * 100)
@@ -17,10 +118,14 @@ def raw_image_show_fakecolor(image,  width, height, pattern, compress_ratio=1): 
     x = width / (compress_ratio * 100)
     y = height / (compress_ratio * 100)
     rgb_img = np.zeros(shape=(height, width, 3))
+
     R = rgb_img[:, :, 0]
     GR = rgb_img[:, :, 1]
     GB = rgb_img[:, :, 1]  # 此处为弱拷贝，后续对GR的操作也是对GB的操作
     B = rgb_img[:, :, 2]
+
+    # R, GR, GB, B = bayer_channel_separation(image, pattern)  # 未测试过是否可以替代下面的判断语句
+
     if pattern == "RGGB":
         R[::2, ::2] = image[::2, ::2]
         GR[::2, 1::2] = image[::2, 1::2]
@@ -51,14 +156,9 @@ def raw_image_show_fakecolor(image,  width, height, pattern, compress_ratio=1): 
     print('show fake color image')
 
 
-def show_planedraw(image1,  width, height, pattern, dtype, sensorbit, compress_ratio=1):
-    image = np.fromfile(image1, dtype)  # 相比于open，该函数可以指定数据类型
-    image = image[0:width * height]  # 这句是为了防止图像中有无效数据
-    image.shape = [height, width]  # 将数组转化为二维矩阵
-    print(image)  # 用于测试显示image里的数据
-    shift_bits = 0
-    image = np.right_shift(image, shift_bits)  # 考虑数据大小端问题，进行移位
-
+def show_planedraw(image1,  width, height, pattern, sensorbit, compress_ratio=1):
+    # image = read_plained_file(file_path_name, dtype, width, height,  shift_bits)
+    image = image1
     if sensorbit == 8:
         image = image / 255  # 8bit sensor 所以是除255，为了和下面函数中 vmax=1进行配合
     elif sensorbit == 10:
@@ -120,5 +220,6 @@ def show_mipiraw_mipi10(image1,  width1, height1, pattern, dtype, sensorbit, com
 
 if __name__ == "__main__":
     print('This is main of module')
-    file_name1 = "BLC.raw"
-    show_planedraw(file_name1, 1920, 1080, 'RGGB', dtype="uint16", sensorbit=12, compress_ratio=1)
+    file_name1 = "1.raw"
+    show_planedraw(file_name1, 640, 480, 'BGGR', dtype="uint8", sensorbit=8, compress_ratio=1)
+    # show_mipiraw_mipi10()
