@@ -60,35 +60,30 @@ def create_lsc_data(img, block_size, pattern):
     Wblocks = int(HW / block_size)
 
     # 整个图像被分成 Hblocks * Wblocks 块，生成一个 Hblocks * Wblocks 的矩阵，用于数据储存。
-    R_LSC_data = np.zeros((Hblocks, Wblocks))  #
+    R_LSC_data = np.zeros((Hblocks, Wblocks))  # 每个块 R 的平均值
     B_LSC_data = np.zeros((Hblocks, Wblocks))
     GR_LSC_data = np.zeros((Hblocks, Wblocks))
     GB_LSC_data = np.zeros((Hblocks, Wblocks))
 
-    # 块距离中心的距离
+    # 块距离光心的距离
     RA = np.zeros((Hblocks, Wblocks))
 
-    # 中心点
-    center_y = HH / 2
-    center_x = HW / 2
-
+    # 计算每个块的平均值
     for y in range(0, HH, block_size):
         for x in range(0, HW, block_size):
-            xx = x + block_size / 2
-            yy = y + block_size / 2
             block_y_num = int(y / block_size)
             block_x_num = int(x / block_size)
-            # 图像中心是光心
-            RA[block_y_num, block_x_num] = (yy - center_y) * (yy - center_y) + (xx - center_x) * (xx - center_x)
             R_LSC_data[block_y_num, block_x_num] = R[y:y + block_size, x:x + block_size].mean()  # 对一块block数据求平均
             GR_LSC_data[block_y_num, block_x_num] = GR[y:y + block_size, x:x + block_size].mean()
             GB_LSC_data[block_y_num, block_x_num] = GB[y:y + block_size, x:x + block_size].mean()
             B_LSC_data[block_y_num, block_x_num] = B[y:y + block_size, x:x + block_size].mean()
 
-    # 寻找光心块
+    # 根据GR的最大值，寻找真正的光心块
     center_point = np.where(GR_LSC_data == np.max(GR_LSC_data))
     center_y = center_point[0] * block_size + block_size / 2
     center_x = center_point[1] * block_size + block_size / 2
+
+    # 计算块距离光心的距离
     for y in range(0, HH, block_size):
         for x in range(0, HW, block_size):
             xx = x + block_size / 2
@@ -97,7 +92,7 @@ def create_lsc_data(img, block_size, pattern):
             block_x_num = int(x / block_size)
             RA[block_y_num, block_x_num] = (yy - center_y) * (yy - center_y) + (xx - center_x) * (xx - center_x)
 
-    # 4个颜色数据通道展平
+    # 4个颜色数据通道展平，便于数据进行拟合，RA_flatten相当于x，R_LSC_data_flatten和其他三个相当于y
     RA_flatten = RA.flatten()
     R_LSC_data_flatten = R_LSC_data.flatten()
     GR_LSC_data_flatten = GR_LSC_data.flatten()
@@ -111,39 +106,23 @@ def create_lsc_data(img, block_size, pattern):
     Max_B = np.max(B_LSC_data_flatten)
 
     # 得到gain,还没有外插
-    G_R_LSC_data = Max_R / R_LSC_data
-    G_GR_LSC_data = Max_GR / GR_LSC_data
-    G_GB_LSC_data = Max_GB / GB_LSC_data
-    G_B_LSC_data = Max_B / B_LSC_data
-
-    R_R = R_LSC_data_flatten / Max_R
-    R_GR = GR_LSC_data_flatten / Max_GR
-    R_GB = GB_LSC_data_flatten / Max_GB
-    R_B = B_LSC_data_flatten / Max_B
-
-    # shading
-    plt.scatter(RA_flatten, R_B, color='blue')
-    plt.scatter(RA_flatten, R_GR, color='green')
-    plt.scatter(RA_flatten, R_GB, color='green')
-    plt.scatter(RA_flatten, R_R, color='red')
-    plt.show()
-    G_R = 1 / R_R
-    G_GR = 1 / R_GR
-    G_GB = 1 / R_GB
-    G_B = 1 / R_B
+    G_R_LSC_data = Max_R / R_LSC_data_flatten
+    G_GR_LSC_data = Max_GR / GR_LSC_data_flatten
+    G_GB_LSC_data = Max_GB / GB_LSC_data_flatten
+    G_B_LSC_data = Max_B / B_LSC_data_flatten
 
     # gain
-    plt.scatter(RA_flatten, G_B, color='blue')
-    plt.scatter(RA_flatten, G_GR, color='green')
-    plt.scatter(RA_flatten, G_GB, color='green')
-    plt.scatter(RA_flatten, G_R, color='red')
+    plt.scatter(RA_flatten, G_R_LSC_data, color='read')
+    plt.scatter(RA_flatten, G_GR_LSC_data, color='green')
+    plt.scatter(RA_flatten, G_GB_LSC_data, color='green')
+    plt.scatter(RA_flatten, G_B_LSC_data, color='blue')
     plt.show()
 
-    # 重要的拟合
-    par_R = np.polyfit(RA_flatten, G_R, 3)
-    par_GR = np.polyfit(RA_flatten, G_GR, 3)
-    par_GB = np.polyfit(RA_flatten, G_GB, 3)
-    par_B = np.polyfit(RA_flatten, G_B, 3)
+    # 进行gain曲线拟合拟合
+    par_R = np.polyfit(RA_flatten, G_R_LSC_data, 3)
+    par_GR = np.polyfit(RA_flatten, G_GR_LSC_data, 3)
+    par_GB = np.polyfit(RA_flatten, G_GB_LSC_data, 3)
+    par_B = np.polyfit(RA_flatten, G_B_LSC_data, 3)
 
     # 拟合之后生成所有点的值
     ES_R = par_R[0] * (RA_flatten ** 3) + par_R[1] * (RA_flatten ** 2) + par_R[2] * RA_flatten + par_R[3]
@@ -151,13 +130,13 @@ def create_lsc_data(img, block_size, pattern):
     ES_GB = par_GB[0] * (RA_flatten ** 3) + par_GB[1] * (RA_flatten ** 2) + par_GB[2] * RA_flatten + par_GB[3]
     ES_B = par_B[0] * (RA_flatten ** 3) + par_B[1] * (RA_flatten ** 2) + par_B[2] * RA_flatten + par_B[3]
     # 拟合数据和原有数据有什么不同
-    plt.scatter(RA_flatten, ES_B, color='blue')
+    plt.scatter(RA_flatten, ES_R, color='red')
     plt.scatter(RA_flatten, ES_GR, color='green')
     plt.scatter(RA_flatten, ES_GB, color='green')
-    plt.scatter(RA_flatten, ES_R, color='red')
+    plt.scatter(RA_flatten, ES_B, color='blue')
     plt.show()
 
-    # 通过拟合的函数生成一个补偿gain的表
+    # 外插补偿的gain通过曲线拟合得到，这边进行外插主要是考虑有些图像的分辨率不能被block整除
     EX_RA = np.zeros((Hblocks + 2, Wblocks + 2))
     EX_R = np.zeros((Hblocks + 2, Wblocks + 2))
     EX_GR = np.zeros((Hblocks + 2, Wblocks + 2))

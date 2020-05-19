@@ -12,3 +12,6 @@ isp参考代码，通过python实现
 # 20200519
 1. cj_curve_fit 增加多项式拟合方式np.polyfit
 2. 添加cj_lsc 文件
+
+# 20200519 23::56
+1. 优化了cj_lsc 文件
