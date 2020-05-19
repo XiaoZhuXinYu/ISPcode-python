@@ -8,3 +8,7 @@ isp参考代码，通过python实现
 
 # 20200518
 完善了cj_rawimage相关功能，添加了cj_dpc cj_filter 两个文件。
+
+# 20200519
+1. cj_curve_fit 增加多项式拟合方式np.polyfit
+2. 添加cj_lsc 文件
