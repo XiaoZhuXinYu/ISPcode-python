@@ -1,8 +1,43 @@
 import numpy as np
 from matplotlib import pyplot as plt
-import raw_image
 import cv2
 import cj_rawimage
+
+
+def apply_shading_to_image_base(img, block_size, shading_R, shading_GR, shading_GB, shading_B, pattern, ratio):
+    # 用G做luma
+    luma_shading = (shading_GR + shading_GB) / 2
+    # 计算color shading
+    R_color_shading = shading_R / luma_shading
+    GR_color_shading = shading_GR / luma_shading
+    GB_color_shading = shading_GB / luma_shading
+    B_color_shading = shading_B / luma_shading
+    # 计算调整之后luma shading
+    new_luma_shading = (luma_shading - 1) * ratio + 1
+    # 合并两种shading
+    new_shading_R = R_color_shading * new_luma_shading
+    new_shading_GR = GR_color_shading * new_luma_shading
+    new_shading_GB = GB_color_shading * new_luma_shading
+    new_shading_B = B_color_shading * new_luma_shading
+
+    R, GR, GB, B = cj_rawimage.bayer_channel_separation(img, pattern)
+    HH, HW = R.shape
+    size_new = (HW, HH)  # 注意opencv和python的不同
+    # 插值的方法的选择
+    ex_R_gain_map = cv2.resize(new_shading_R, size_new, interpolation=cv2.INTER_CUBIC)
+    ex_GR_gain_map = cv2.resize(new_shading_GR, size_new, interpolation=cv2.INTER_CUBIC)
+    ex_GB_gain_map = cv2.resize(new_shading_GB, size_new, interpolation=cv2.INTER_CUBIC)
+    ex_B_gain_map = cv2.resize(new_shading_B, size_new, interpolation=cv2.INTER_CUBIC)
+
+    R_new = R * ex_R_gain_map
+    GR_new = GR * ex_GR_gain_map
+    GB_new = GB * ex_GB_gain_map
+    B_new = B * ex_B_gain_map
+
+    new_image = cj_rawimage.bayer_channel_integration(R_new, GR_new, GB_new, B_new, pattern)
+    # 值缩减到0~1023
+    new_image = np.clip(new_image, a_min=0, a_max=1023)
+    return new_image
 
 
 def apply_shading_to_image(img, block_size, shading_R, shading_GR, shading_GB, shading_B, pattern, ratio):
@@ -21,7 +56,7 @@ def apply_shading_to_image(img, block_size, shading_R, shading_GR, shading_GB, s
     new_shading_GB = GB_color_shading * new_luma_shading
     new_shading_B = B_color_shading * new_luma_shading
 
-    R, GR, GB, B = raw_image.bayer_channel_separation(img, pattern)
+    R, GR, GB, B = cj_rawimage.bayer_channel_separation(img, pattern)
     HH, HW = R.shape
     size_new = (HW + block_size, HH + block_size)
     # 插值的方法的选择
@@ -41,15 +76,72 @@ def apply_shading_to_image(img, block_size, shading_R, shading_GR, shading_GB, s
     GB_new = GB * GB_gain_map
     B_new = B * B_gain_map
 
-    new_image = raw_image.bayer_channel_integration(R_new, GR_new, GB_new, B_new, pattern)
+    new_image = cj_rawimage.bayer_channel_integration(R_new, GR_new, GB_new, B_new, pattern)
     # 值缩减到0~1023
     new_image = np.clip(new_image, a_min=0, a_max=1023)
     return new_image
 
 
+def create_lsc_data_base(img, block_size, pattern):
+    # 分开四个颜色通道
+    R, GR, GB, B = cj_rawimage.bayer_channel_separation(img, pattern)
+    # print(img.shape, R.shape)
+
+    # 每张的高宽
+    HH, HW = R.shape
+
+    # 生成分多少块
+    Hblocks = int(HH / block_size)
+    Wblocks = int(HW / block_size)
+
+    # 整个图像被分成 Hblocks * Wblocks 块，生成一个 Hblocks * Wblocks 的矩阵，用于数据储存。
+    R_LSC_data = np.zeros((Hblocks, Wblocks))  # 每个块 R 的平均值
+    B_LSC_data = np.zeros((Hblocks, Wblocks))
+    GR_LSC_data = np.zeros((Hblocks, Wblocks))
+    GB_LSC_data = np.zeros((Hblocks, Wblocks))
+
+    # 块距离光心的距离
+    RA = np.zeros((Hblocks, Wblocks))
+
+    # 计算每个块的平均值
+    for y in range(0, HH, block_size):
+        for x in range(0, HW, block_size):
+            block_y_num = int(y / block_size)
+            block_x_num = int(x / block_size)
+            R_LSC_data[block_y_num, block_x_num] = R[y:y + block_size, x:x + block_size].mean()  # 对一块block数据求平均
+            GR_LSC_data[block_y_num, block_x_num] = GR[y:y + block_size, x:x + block_size].mean()
+            GB_LSC_data[block_y_num, block_x_num] = GB[y:y + block_size, x:x + block_size].mean()
+            B_LSC_data[block_y_num, block_x_num] = B[y:y + block_size, x:x + block_size].mean()
+
+    # 4个颜色数据通道展平，便于数据进行拟合，RA_flatten相当于x，R_LSC_data_flatten和其他三个相当于y
+    R_LSC_data_flatten = R_LSC_data.flatten()
+    GR_LSC_data_flatten = GR_LSC_data.flatten()
+    GB_LSC_data_flatten = GB_LSC_data.flatten()
+    B_LSC_data_flatten = B_LSC_data.flatten()
+
+    # 最亮块的值
+    Max_R = np.max(R_LSC_data_flatten)
+    Max_GR = np.max(GR_LSC_data_flatten)
+    Max_GB = np.max(GB_LSC_data_flatten)
+    Max_B = np.max(B_LSC_data_flatten)
+
+    # 得到gain
+    G_R_LSC_data = Max_R / R_LSC_data_flatten
+    G_GR_LSC_data = Max_GR / GR_LSC_data_flatten
+    G_GB_LSC_data = Max_GB / GB_LSC_data_flatten
+    G_B_LSC_data = Max_B / B_LSC_data_flatten
+
+    G_R_LSC_data.shape = (Hblocks, Wblocks)
+    G_GR_LSC_data.shape = (Hblocks, Wblocks)
+    G_GB_LSC_data.shape = (Hblocks, Wblocks)
+    G_B_LSC_data.shape = (Hblocks, Wblocks)
+
+    return G_R_LSC_data, G_GR_LSC_data, G_GB_LSC_data, G_B_LSC_data
+
+
 def create_lsc_data(img, block_size, pattern):
     # 分开四个颜色通道
-    R, GR, GB, B = raw_image.bayer_channel_separation(img, pattern)
+    R, GR, GB, B = cj_rawimage.bayer_channel_separation(img, pattern)
     # print(img.shape, R.shape)
 
     # 每张的高宽
@@ -112,7 +204,7 @@ def create_lsc_data(img, block_size, pattern):
     G_B_LSC_data = Max_B / B_LSC_data_flatten
 
     # gain
-    plt.scatter(RA_flatten, G_R_LSC_data, color='read')
+    plt.scatter(RA_flatten, G_R_LSC_data, color='red')
     plt.scatter(RA_flatten, G_GR_LSC_data, color='green')
     plt.scatter(RA_flatten, G_GB_LSC_data, color='green')
     plt.scatter(RA_flatten, G_B_LSC_data, color='blue')
@@ -161,6 +253,10 @@ def create_lsc_data(img, block_size, pattern):
                          par_B[3]
 
     # 中心用实际采样的数据
+    G_R_LSC_data.shape = (Hblocks, Wblocks)
+    G_GR_LSC_data.shape = (Hblocks, Wblocks)
+    G_GB_LSC_data.shape = (Hblocks, Wblocks)
+    G_B_LSC_data.shape = (Hblocks, Wblocks)
     EX_R[1:1 + Hblocks, 1:1 + Wblocks] = G_R_LSC_data
     EX_GR[1:1 + Hblocks, 1:1 + Wblocks] = G_GR_LSC_data
     EX_GB[1:1 + Hblocks, 1:1 + Wblocks] = G_GB_LSC_data
@@ -174,15 +270,16 @@ if __name__ == "__main__":
                                         shift_bits=0)
     block_size = 16
     pattern = "GRBG"
-    shading_R, shading_GR, shading_GB, shading_B = create_lsc_data(img, block_size, pattern)
+    shading_R, shading_GR, shading_GB, shading_B = create_lsc_data_base(img, block_size, pattern)
     img2 = cj_rawimage.read_plained_file("../pic/D65_4032_2752_GRBG_1_BLC.raw", dtype="uint16", width=4032, height=2752,
                                          shift_bits=0)
     cj_rawimage.show_planedraw(img2, width=4032, height=2752, pattern="MONO", sensorbit=10, compress_ratio=1)
-
+    cv2.imwrite('1.bmp', img2)
     # luma 和color shading
-    new_image = apply_shading_to_image(img=img2, block_size=block_size, shading_R=shading_R, shading_GR=shading_GR,
-                                       shading_GB=shading_GB, shading_B=shading_B, pattern="GRBG", ratio=1)
+    new_image = apply_shading_to_image_base(img=img2, block_size=block_size, shading_R=shading_R, shading_GR=shading_GR,
+                                            shading_GB=shading_GB, shading_B=shading_B, pattern="GRBG", ratio=1)
 
     print(np.min(new_image), np.max(new_image))
     # cj_rawimage.show_planedraw(new_image, width=4032, height=2752, pattern=pattern, sensorbit=10, compress_ratio=1)
     cj_rawimage.show_planedraw(new_image, width=4032, height=2752, pattern="MONO", sensorbit=10, compress_ratio=1)
+    cv2.imwrite('2.bmp', new_image)
