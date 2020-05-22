@@ -16,6 +16,8 @@ def apply_shading_to_image_base(img, block_size, shading_R, shading_GR, shading_
     new_luma_shading = (luma_shading - 1) * ratio + 1
     # 合并两种shading
     new_shading_R = R_color_shading * new_luma_shading
+    print("new_shading_R.shape:", new_shading_R.shape, "R_color_shading.shape:", R_color_shading.shape,
+          "new_luma_shading.shape:", new_luma_shading.shape)
     new_shading_GR = GR_color_shading * new_luma_shading
     new_shading_GB = GB_color_shading * new_luma_shading
     new_shading_B = B_color_shading * new_luma_shading
@@ -30,6 +32,8 @@ def apply_shading_to_image_base(img, block_size, shading_R, shading_GR, shading_
     ex_B_gain_map = cv2.resize(new_shading_B, size_new, interpolation=cv2.INTER_CUBIC)
 
     R_new = R * ex_R_gain_map
+    print("R_new.shape:", R_new.shape, "R.shape:", R.shape, "ex_R_gain_map.shape:", ex_R_gain_map.shape)
+
     GR_new = GR * ex_GR_gain_map
     GB_new = GB * ex_GB_gain_map
     B_new = B * ex_B_gain_map
@@ -274,7 +278,7 @@ if __name__ == "__main__":
     img2 = cj_rawimage.read_plained_file("../pic/D65_4032_2752_GRBG_1_BLC.raw", dtype="uint16", width=4032, height=2752,
                                          shift_bits=0)
     cj_rawimage.show_planedraw(img2, width=4032, height=2752, pattern="MONO", sensorbit=10, compress_ratio=1)
-    cv2.imwrite('1.bmp', img2)
+
     # luma 和color shading
     new_image = apply_shading_to_image_base(img=img2, block_size=block_size, shading_R=shading_R, shading_GR=shading_GR,
                                             shading_GB=shading_GB, shading_B=shading_B, pattern="GRBG", ratio=1)
@@ -282,4 +286,5 @@ if __name__ == "__main__":
     print(np.min(new_image), np.max(new_image))
     # cj_rawimage.show_planedraw(new_image, width=4032, height=2752, pattern=pattern, sensorbit=10, compress_ratio=1)
     cj_rawimage.show_planedraw(new_image, width=4032, height=2752, pattern="MONO", sensorbit=10, compress_ratio=1)
-    cv2.imwrite('2.bmp', new_image)
+
+
