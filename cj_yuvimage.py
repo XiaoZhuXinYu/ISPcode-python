@@ -114,4 +114,3 @@ if __name__ == '__main__':
     print(np.max(testimg), np.min(testimg))
     rgb = ycbcr2rgb(testimg, height=1080, width=1920)
     rgb_image_show(rgb/255, height=1080, width=1920, compress_ratio=1)
-

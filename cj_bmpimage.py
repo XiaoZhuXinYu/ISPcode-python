@@ -29,15 +29,12 @@ def test_read_bmpimage(image1, width, height, dtype, sensorbit, compress_ratio=1
     bmp_image_show_gray(testimage, width, height, compress_ratio=1)
 
 
-def test_show_bmp_histogram(image1, dtype, width, height, start_x, start_y, len_x, len_y, step_x, step_y):
+def test_show_bmp_histogram(image1, dtype, width, height, start_x, start_y, len_x, len_y, step_x, step_y, num):
     image = np.fromfile(image1, dtype)  # 相比于open，该函数可以指定数据类型
     image = image[1078:]
     image.shape = [height, width]
     testimage = image[start_y:(len_y + start_y):step_y, start_x:(len_x + start_x):step_x]
-    # array_bins = np.arange(0, 256, 1)
-    # array_bins = np.array([0, 16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 256])
-    array_bins = np.array([0, 50, 100, 150, 200, 256])
-    # array_bins = np.array([0, 32, 64, 96, 128, 160, 192, 224, 256])
+    array_bins = np.arange(0, 256, 255/num)
     testimage_flatten = testimage.flatten()  # 将二维数组转成一维数组
     n = plt.hist(testimage_flatten, bins=array_bins)  # 第一个参数必须是一个一维数组
     print("testimage_flatten.mean:", testimage_flatten.mean())
