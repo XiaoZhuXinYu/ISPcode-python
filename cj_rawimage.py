@@ -168,7 +168,7 @@ def show_planedraw(image1,  width, height, pattern, sensorbit, compress_ratio=1)
     else:
         image = image / 4095  # 12bit sensor 所以是除4095，为了和下面函数中 vmax=1进行配合
 
-    if pattern == 'MONO':
+    if pattern == "MONO":
         raw_image_show_gray(image, width, height, compress_ratio)
     else:
         raw_image_show_fakecolor(image, width, height, pattern, compress_ratio)
@@ -220,6 +220,7 @@ def show_mipiraw_mipi10(image1,  width1, height1, pattern, dtype, sensorbit, com
 
 if __name__ == "__main__":
     print('This is main of module')
-    file_name1 = "1.raw"
-    show_planedraw(file_name1, 640, 480, 'BGGR', dtype="uint8", sensorbit=8, compress_ratio=1)
-    # show_mipiraw_mipi10()
+    file_name1 = "../pic/BayerRGGB_1920_1080_12bits_D65-6450.raw"
+    iamge = read_plained_file(file_name1, dtype="uint16", width=1920, height=1080, shift_bits=0)
+    show_planedraw(iamge, 1920, 1080, "RGGB", sensorbit=12, compress_ratio=1)
+    # # show_mipiraw_mipi10()
