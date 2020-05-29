@@ -26,10 +26,13 @@ isp参考代码，通过python实现
 # 20200524 23::16
 1. cj_bmpimage 优化了直方图统计的算法，支持任意指定直方图统计区间的长度。
 
-# 20200528 18：：25
+# 20200528 18::25
 1. cj_bmpimage 优化了直方图统计的算法，添加打印数据统计信息等，x，y轴坐标支持中文显示。
 read_bmpimage show_bmpimage 函数分开写。
 2. cj_curve_fit 添加描点函数。
 3. cj_rawimage read_plained_file show_planedraw 函数分开写。
 4. cj_histogram 删除一些冗余函数。
 5. cj_2dnr 添加该文件
+
+# 20200529 18::51
+1. cj_2dnr 添加 bilateral_filter1 函数。只支持3*3矩阵。优化了处理速度。
