@@ -36,3 +36,6 @@ read_bmpimage show_bmpimage 函数分开写。
 
 # 20200529 18::51
 1. cj_2dnr 添加 bilateral_filter1 函数。只支持3*3矩阵。优化了处理速度。
+
+# 20200608 13::06
+1. 添加了gitignore配置文件
