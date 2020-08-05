@@ -1,9 +1,10 @@
 import numpy as np
 import math
 from matplotlib import pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 
-def read_plained_file(file_path_name, dtype, width, height,  shift_bits):
+def read_plained_file(file_path_name, dtype, width, height, shift_bits):
     frame = np.fromfile(file_path_name, dtype=dtype)  # 相比于open，该函数可以指定数据类型
     # print("b shape",b.shape)
     # print('%#x'%b[0])
@@ -57,8 +58,8 @@ def bayer_channel_separation(data, pattern):
     else:
         print("pattern must be one of :  RGGB, GBRG, GBRG, or BGGR")
         return
-
-    return R, GR, GB, B
+    G = (GR + GB) / 2
+    return R, GR, GB, B, G
 
 
 # 合成
@@ -216,6 +217,35 @@ def show_mipiraw_mipi10(image1,  width1, height1, pattern, dtype, sensorbit, com
     frame_out = frame_out / 1023
     raw_image_show_gray(frame_out, 4032, 3016)
     return 0
+
+
+# 该函数没有测试过
+def raw_image_show_3D(image, width, height, sensorbit, compress_ratio=1):
+    if sensorbit == 8:
+        image = image / 255  # 8bit sensor 所以是除255，为了和下面函数中 vmax=1进行配合
+    elif sensorbit == 10:
+        image = image / 1023  # 10bit sensor 所以是除1023，为了和下面函数中 vmax=1进行配合
+    elif sensorbit == 12:
+        image = image / 4095  # 12bit sensor 所以是除4095，为了和下面函数中 vmax=1进行配合
+    else:
+        image = image / 4095  # 12bit sensor 所以是除4095，为了和下面函数中 vmax=1进行配合
+
+    width = width / (compress_ratio * 100)
+    height = height / (compress_ratio * 100)
+
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    ax = plt.subplot(1, 1, 1, projection='3d')
+    X = np.arange(0, width)
+    Y = np.arange(0, height)
+    X, Y = np.meshgrid(X, Y)
+    R = np.sqrt(X ** 2 + Y ** 2)
+    Z = image
+    # 具体函数方法可用 help(function) 查看，如：help(ax.plot_surface)
+    # ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap='rainbow')
+    ax.plot_wireframe(X, Y, Z, rstride=10, cstride=10)
+    plt.show()
+    print('show')
 
 
 if __name__ == "__main__":

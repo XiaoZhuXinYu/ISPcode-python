@@ -39,3 +39,14 @@ read_bmpimage show_bmpimage 函数分开写。
 
 # 20200608 13::06
 1. 添加了gitignore配置文件
+
+
+# 20200805 20:05
+1. 添加了awb和gamma两个文件
+2. 2dnr部分添加了一个功能，可以自动生成函数调用关系图，并以png格式保存在本地。
+3. bmpimage，show_bmpimage函数支持显示彩色或黑白图片。并将直方图分析函数test_show_bmp_histogram和
+gamma曲线拟合函数test_show_bf3a03_gamma 移动到对应的文件中。
+4. filter文件增加一个 gaussBlur 函数。
+5. histogram文件增加一个 test_show_bmp_histogram 函数。
+6. rawimage文件增加一个 raw_image_show_3D 函数，但是该函数没有测试过。
+7. yuvimage文件增加一个 rgb2ycbcr 函数。

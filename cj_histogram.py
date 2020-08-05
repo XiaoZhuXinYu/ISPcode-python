@@ -1,6 +1,8 @@
 import numpy as np
-import cj_rawimage as rawimage
 import matplotlib.pyplot as plt
+
+import cj_rawimage as rawimage
+import cj_bmpimage as bmpmage
 
 
 # 统计直方图
@@ -85,6 +87,46 @@ def get_statistcs_point():
     y = np.array([])
 
 
+def test_show_bmp_histogram(image1, dtype, width, height, start_x, start_y, len_x, len_y, step_x, step_y, num):
+    image = bmpmage.read_bmpimage(image1, width, height, dtype)
+    testimage = image[start_y:(len_y + start_y):step_y, start_x:(len_x + start_x):step_x]
+    # array_bins = np.arange(0, 256, 255 / num)  # 等差数列数组支持任意个数组元素
+    array_bins = np.array([0, 40, 100, 170, 250, 256])  # 特殊数组单独添加测试
+    testimage_flatten = testimage.flatten()  # 将二维数组转成一维数组
+    n = plt.hist(testimage_flatten, bins=array_bins)  # 第一个参数必须是一个一维数组
+    np.set_printoptions(precision=1, suppress=True)  # 设置输出小数点位数 取消科学计数法
+    print("平均灰度:", format(testimage_flatten.mean(), '.1f'))  # 上一句设置小数点位数对它无效，进行另外设置
+    print("直方图统计个数:", n[0])
+    percent = np.zeros(num)
+    for i in range(0, num):
+        percent[i] = n[0][i] / n[0].sum()
+    print("直方图统计百分比:", percent * 100)
+
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    plt.rcParams['axes.unicode_minus'] = False  # 添加这两句支持plt中文显示
+
+    plt.xlabel('灰度值')
+    plt.ylabel('个数')
+    plt.title('histogram')
+    plt.show()
+
+    testimage = image[0:start_y:step_y, 0:width:step_x]
+    testimage_flatten = testimage.flatten()  # 将二维数组转成一维数组
+    print("ave1:", format(testimage_flatten.mean(), '.1f'))
+
+    testimage = image[start_y:height:step_y, 0:start_x:step_x]
+    testimage_flatten = testimage.flatten()  # 将二维数组转成一维数组
+    print("ave2:", format(testimage_flatten.mean(), '.1f'))
+
+    testimage = image[start_y:height:step_y, (start_x + len_x):width:step_x]
+    testimage_flatten = testimage.flatten()  # 将二维数组转成一[[维数组
+    print("ave4:", format(testimage_flatten.mean(), '.1f'))
+    # cv2.imwrite("../pic/123456.bmp", image)
+
+
 if __name__ == "__main__":
     print('This is main of module')
-    get_statistcs_test()
+    file_name1 = "../pic/pic_14.bmp"
+    # get_statistcs_test()
+    test_show_bmp_histogram(file_name1, dtype="uint8", width=640, height=480, start_x=160, start_y=160, len_x=320,
+                            len_y=320, step_x=4, step_y=4, num=5)

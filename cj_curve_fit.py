@@ -67,22 +67,21 @@ def test_curvefit():
     ydata = np.array(
         [161, 140.4, 133, 138.1, 118.4, 103, 85.8, 75.6, 70, 66.8, 62.4, 60, 56.6, 54.6, 53.1, 51.5, 50.5, 50.3, 49.6,
          49.5, 49.1, 48.6, 48.4, 49.2, 48.6, 49.2])
-    xdata = xdata3 + xdata4;
+    xdata = xdata3 + xdata4
     # ydata = np.array(
     #     [0x70, 0x80, 0xa0, 0xe0, 0x100, 0x120, 0x130, 0x150, 0x180, 0x1c0, 0x1f0, 0x230, 0x260, 0x2a0, 0x2e0, 0x320,
     #      0x360, 0x3b0, 0x3f0, 0x440, 0x480, 0x4c0, 0x510, 0x570, 0x5b0, 0x610])
 
-    p0 = [0.1, -0.01, 100]  # 拟合的初始参数设置，可以任意设置 最小二乘法使用
-
     # 下面是曲线拟合的三种方式 polyfit, curve_fit 和 leastsq 实际选用一种即可
 
-    para = np.polyfit(xdata3+xdata4, ydata, 2)  # 该函数主要做多项式拟合，如果是指数，对数 推荐使用后面两种方式
-    y_fitted = para[0] * (xdata ** 2) + para[1] * xdata + para[2]
+    # para = np.polyfit(xdata3+xdata4, ydata, 2)  # 该函数主要做多项式拟合，如果是指数，对数 推荐使用后面两种方式
+    # y_fitted = para[0] * (xdata ** 2) + para[1] * xdata + para[2]
     # y_fitted = para[0] * xdata + para[1]
 
-    # para, pcov = curve_fit(Fun_curve_fit, xdata, ydata)
-    # y_fitted = Fun_curve_fit(xdata, para[0], para[1], para[2])  # 画出拟合后的曲线
+    para, pcov = curve_fit(Fun_curve_fit, xdata, ydata)
+    y_fitted = Fun_curve_fit(xdata, para[0], para[1], para[2])  # 画出拟合后的曲线
 
+    # p0 = [0.1, -0.01, 100]  # 拟合的初始参数设置，可以任意设置 最小二乘法使用
     # para = leastsq(error, p0, args=(xdata, ydata))  # 最小二乘法进行拟合
     # y_fitted = Fun_leastsq(para[0], xdata)  # 画出拟合后的曲线
 

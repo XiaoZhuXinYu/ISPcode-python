@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 import numpy as np
 import cv2
+import os
 import cj_bmpimage
 
 
@@ -73,6 +74,7 @@ def bilateral_filter1(image, diameter, sigmaColor, sigmaSpace):
     weight_gray = np.zeros(256)  # 存放灰度差值的平方
     for i in range(256):
         weight_gray[i] = gaussian(i, sigmaColor)
+        print(weight_gray[i])
 
     # 计算空间模板
     weight_space = np.zeros(diameter * diameter)  # 存放模板系数
@@ -167,10 +169,27 @@ def bilateral_filter1(image, diameter, sigmaColor, sigmaSpace):
 
 if __name__ == "__main__":
     print('This is main of module')
-    file_name1 = "../pic/lena_gray_noised.bmp"
+    # file_name1 = "../pic/lena_gray_noised.bmp"
 
-    image = cj_bmpimage.read_bmpimage(file_name1, 512, 512, dtype="uint8")
-    filtered_image1 = bilateral_filter1(image, 3, 3, 3)
-    cj_bmpimage.show_bmpimage(filtered_image1, 512, 512, sensorbit=8, compress_ratio=1)
+    for root, dirs, files in os.walk("../pic/00C0_3C_"):
+
+        # root 表示当前正在访问的文件夹路径
+        # dirs 表示该文件夹下的子目录名list
+        # files 表示该文件夹下的文件list
+
+        # 遍历文件
+
+        for f in files:
+            filename = os.path.join(root, f)
+            f = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
+            noised_img = np.uint8(f)
+            filtered_image_OpenCV = cv2.bilateralFilter(noised_img, 3, 3, 3)
+            filename1 = filename + "-bil.bmp"
+            cv2.imwrite(filename1, filtered_image_OpenCV)
+
+    # image = cj_bmpimage.read_bmpimage(file_name1, 512, 512, dtype="uint8")
+    # filtered_image1 = bilateral_filter1(image, 3, 3, 3)
+    # cj_bmpimage.show_bmpimage(filtered_image1, 512, 512, sensorbit=8, compress_ratio=1)
+    # cv2.imwrite("../pic/lena_gray_denoised.bmp", filtered_image1)
 
 

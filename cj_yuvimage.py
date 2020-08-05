@@ -24,6 +24,21 @@ def ycbcr2rgb(image, width, height):
     return rgb_img
 
 
+# RGB 转 ycbcr
+def rgb2ycbcr(R, G, B):
+    size = R.shape
+    im = np.empty((size[0], size[1], 3), dtype=np.float32)
+    im[:, :, 0] = R
+    im[:, :, 1] = G
+    im[:, :, 2] = B
+
+    xform = np.array([[0.299, 0.587, 0.114], [-0.1687, -0.3313, 0.5], [0.5, -0.4187, -0.0813]])
+    ycbcr = np.dot(im, xform.T)
+    ycbcr[:, :, [1, 2]] += 128
+    # print("ycbcr = ", ycbcr)
+    return ycbcr
+
+
 def ycbcrshow(image, width, height):
     imagergb = ycbcr2rgb(image, width, height)
     rgb_image_show(imagergb, width, height)
