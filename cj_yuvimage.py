@@ -39,6 +39,52 @@ def rgb2ycbcr(R, G, B):
     return ycbcr
 
 
+def labf(t):
+    # 本算法中传入的 t 是一个二维矩阵
+    d = t ** (1 / 3)
+    index = np.where(t <= 0.008856)  # 0.008856 约等于 (6/29) 的三次方
+    d[index] = 7.787 * t[index] + 4 / 29  # 7.787 约等于 (1/3) * (29/6) * (29/6)
+    return d
+
+
+def rgb2lab(X):
+    a = np.array([
+        [3.40479, -1.537150, -0.498535],
+        [-0.969256, 1.875992, 0.041556],
+        [0.055648, -0.204043, 1.057311]])
+    # ai = np.array([
+    #     [0.38627512, 0.33488427, 0.1689713],
+    #     [0.19917304, 0.70345694, 0.06626421],
+    #     [0.01810671, 0.11812969, 0.94969014]])  # 该矩阵和下面算出来的是一样的
+    ai = np.linalg.inv(a)  # 求矩阵a的逆矩阵
+
+    h, w, c = X.shape  # X是含有RGB三个分量的数据
+    R = X[:, :, 0]
+    G = X[:, :, 1]
+    B = X[:, :, 2]
+    planed_R = R.flatten()  # 将二维矩阵转成1维矩阵
+    planed_G = G.flatten()
+    planed_B = B.flatten()
+    planed_image = np.zeros((c, h * w))  # 注意这里 planed_B 是一个二维数组
+    planed_image[0, :] = planed_R  # 将 planed_R 赋值给 planed_image 的第0行
+    planed_image[1, :] = planed_G
+    planed_image[2, :] = planed_B
+    planed_lab = np.dot(ai, planed_image)  # 相当于两个矩阵相乘 将rgb空间转到xyz空间
+    planed_1 = planed_lab[0, :]
+    planed_2 = planed_lab[1, :]
+    planed_3 = planed_lab[2, :]
+    L1 = np.reshape(planed_1, (h, w))
+    L2 = np.reshape(planed_2, (h, w))
+    L3 = np.reshape(planed_3, (h, w))
+    result_lab = np.zeros((h, w, c))
+    # color  space conversion  into LAB
+    result_lab[:, :, 0] = 116 * labf(L2 / 255) - 16
+    result_lab[:, :, 1] = 500 * (labf(L1 / 255) - labf(L2 / 255))
+    result_lab[:, :, 2] = 200 * (labf(L2 / 255) - labf(L3 / 255))
+
+    return result_lab
+
+
 def ycbcrshow(image, width, height):
     imagergb = ycbcr2rgb(image, width, height)
     rgb_image_show(imagergb, width, height)

@@ -93,12 +93,19 @@ def bilateral_filter1(image, diameter, sigmaColor, sigmaSpace):
     end_col = img_width - diameter // 2
     for row in range(start_row, end_row):
         for col in range(start_col, end_col):
+            # wp_total = 0
+            # filtered_image = 0
+            # wp_total不设置成0是为了防止分母为0的情况，实际遇到过如下矩阵，指数分母过大，导致系数近似为0.
+            # 3   3 5
+            # 8 255 5
+            # 7   1 2
             wp_total = 1
             filtered_image = image[row][col]
+
             pixel = image[row][col]
 
             # 每个窗口的所有像素
-            data = image[row-1][col-1]
+            data = image[row - 1][col - 1]
             gi = weight_gray[np.abs(int(data) - int(pixel))]
             gs = weight_space[0]  # 边界处值域权重为0，空域不做特殊处理
             wp = gi * gs

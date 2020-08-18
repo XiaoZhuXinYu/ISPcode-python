@@ -50,3 +50,8 @@ gamma曲线拟合函数test_show_bf3a03_gamma 移动到对应的文件中。
 5. histogram文件增加一个 test_show_bmp_histogram 函数。
 6. rawimage文件增加一个 raw_image_show_3D 函数，但是该函数没有测试过。
 7. yuvimage文件增加一个 rgb2ycbcr 函数。
+
+
+# 20200818 17:58
+1. yuvimage文件增加一个 rgb2lab 函数。
+2. 增加 cj_demosaic 文件。
