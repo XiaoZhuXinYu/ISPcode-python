@@ -4,6 +4,46 @@ from matplotlib import pyplot as plt
 from scipy.interpolate import griddata
 
 
+def degamma_srgb(self, clip_range=[0, 1023]):
+    # bring data in range 0 to 1
+    data = np.clip(self.data, clip_range[0], clip_range[1])
+    data = np.divide(data, clip_range[1])
+
+    data = np.asarray(data)
+    mask = data > 0.04045
+
+    # basically, if data[x, y, c] > 0.04045, data[x, y, c] = ( (data[x, y, c] + 0.055) / 1.055 ) ^ 2.4
+    #            else, data[x, y, c] = data[x, y, c] / 12.92
+    data[mask] += 0.055
+    data[mask] /= 1.055
+    data[mask] **= 2.4
+
+    data[np.invert(mask)] /= 12.92
+
+    # rescale
+    return np.clip(data * clip_range[1], clip_range[0], clip_range[1])
+
+
+def gamma_srgb(data, clip_range=[0, 1023]):
+    # bring data in range 0 to 1
+    data = np.clip(data, clip_range[0], clip_range[1])
+    data = np.divide(data, clip_range[1])
+
+    data = np.asarray(data)
+    mask = data > 0.0031308
+
+    # basically, if data[x, y, c] > 0.0031308, data[x, y, c] = 1.055 * ( var_R(i, j) ^ ( 1 / 2.4 ) ) - 0.055
+    #            else, data[x, y, c] = data[x, y, c] * 12.92
+    data[mask] **= 0.4167
+    data[mask] *= 1.055
+    data[mask] -= 0.055
+
+    data[np.invert(mask)] *= 12.92
+
+    # rescale
+    return np.clip(data * clip_range[1], clip_range[0], clip_range[1])
+
+
 def test_show_bf3a03_gamma():
     x = np.array([0, 4, 8, 16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 192, 224, 255])
     xnew = np.linspace(0, 255, 2551)

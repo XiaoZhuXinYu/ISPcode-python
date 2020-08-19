@@ -20,7 +20,7 @@ def write_plained_file(file_path_name, image, dtype):
     elif dtype == "uint16":
         image = image.astype(np.uint16)
     frame = image.tofile(file_path_name)
-    return
+    return frame
 
 
 # 非弱拷贝分离,没带颜色通道

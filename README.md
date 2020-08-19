@@ -55,3 +55,30 @@ gamma曲线拟合函数test_show_bf3a03_gamma 移动到对应的文件中。
 # 20200818 17:58
 1. yuvimage文件增加一个 rgb2lab 函数。
 2. 增加 cj_demosaic 文件。
+
+
+# 20200819 19:53
+1. 将  cj_bmpimage.py 文件修改为  cj_rgbimage.py
+2. 整理了  cj_demosaic.py 文件，将三种算法整合在一起。该部分算法已经全部测试过可行。
+3. cj_gamma.py 文件增加了 degamma_srgb gamma_srgb两个函数，但是该函数没有测试过。
+4. 新增了一个 cj_csc.py 文件，将所有的颜色空间转换函数都放在这个文件中，并新增了 rgb xyz lab 三者转换的函数，但是这些函数没有测试过。
+5. 新增了一个 cj_ccm.py 文件，但是这些函数没有测试过。
+ 
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 

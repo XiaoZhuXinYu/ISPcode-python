@@ -126,7 +126,7 @@ def test_show_bmp_histogram(image1, dtype, width, height, start_x, start_y, len_
 
 if __name__ == "__main__":
     print('This is main of module')
-    file_name1 = "../pic/qrcode/pic_4.bmp"
+    file_name1 = "../pic/qrcode/pic_6.bmp"
     # get_statistcs_test()
     test_show_bmp_histogram(file_name1, dtype="uint8", width=640, height=480, start_x=160, start_y=160, len_x=320,
                             len_y=320, step_x=4, step_y=4, num=5)

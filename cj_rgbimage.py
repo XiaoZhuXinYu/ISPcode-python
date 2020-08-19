@@ -2,8 +2,21 @@ import numpy as np
 import cv2
 import math
 from matplotlib import pyplot as plt
-# import matplotlib.pyplot as plt
-from scipy import signal
+
+
+def rgb_image_show_color(image, compress_ratio=1, maxvalue=255,  color="color"):
+    height, width, c = image.shape
+    x = width / (compress_ratio * 100)
+    y = height / (compress_ratio * 100)
+
+    plt.figure(num='test', figsize=(x, y))
+    # plt.imshow(image / maxvalue, interpolation='bicubic', vmax=1.0)
+    if color == "gray":
+        plt.imshow(image / maxvalue, cmap='gray', interpolation='bicubic', vmax=1.0)
+    else:
+        plt.imshow(image / maxvalue, interpolation='bicubic', vmax=1.0)
+    plt.xticks([]), plt.yticks([])  # 隐藏 X轴 和 Y轴的标记位置和labels
+    plt.show()
 
 
 def read_bmpimage(image1, width, height, dtype):

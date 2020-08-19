@@ -1,9 +1,46 @@
 import cj_rawimage as rawimage
 import cj_yuvimage as yuvimage
-import matplotlib.pyplot as plt
+import cj_rgbimage as rgbimage
+from matplotlib import pyplot as plt
 from scipy import signal
 import numpy as np
 import cv2 as cv
+
+
+# 制作raw图
+def make_mosaic(im, pattern):
+    w, h, z = im.shape
+    R = np.zeros((w, h))
+    GR = np.zeros((w, h))
+    GB = np.zeros((w, h))
+    B = np.zeros((w, h))
+    image_data = im
+    # 将对应位置的元素取出来,因为懒所以没有用效率最高的方法,大家可以自己去实现
+    if pattern == "RGGB":
+        R[::2, ::2] = image_data[::2, ::2, 0]
+        GR[::2, 1::2] = image_data[::2, 1::2, 1]
+        GB[1::2, ::2] = image_data[1::2, ::2, 1]
+        B[1::2, 1::2] = image_data[1::2, 1::2, 2]
+    elif pattern == "GRBG":
+        GR[::2, ::2] = image_data[::2, ::2, 1]
+        R[::2, 1::2] = image_data[::2, 1::2, 0]
+        B[1::2, ::2] = image_data[1::2, ::2, 2]
+        GB[1::2, 1::2] = image_data[1::2, 1::2, 1]
+    elif pattern == "GBRG":
+        GB[::2, ::2] = image_data[::2, ::2, 1]
+        B[::2, 1::2] = image_data[::2, 1::2, 2]
+        R[1::2, ::2] = image_data[1::2, ::2, 0]
+        GR[1::2, 1::2] = image_data[1::2, 1::2, 1]
+    elif pattern == "BGGR":
+        B[::2, ::2] = image_data[::2, ::2, 2]
+        GB[::2, 1::2] = image_data[::2, 1::2, 1]
+        GR[1::2, ::2] = image_data[1::2, ::2, 1]
+        R[1::2, 1::2] = image_data[1::2, 1::2, 0]
+    else:
+        print("pattern must be one of :  RGGB, GBRG, GBRG, or BGGR")
+        return
+    result_image = R + GR + GB + B
+    return result_image
 
 
 # 得到RGB三个分量的模板，例如说R分量的模板，raw图中存R分量的位置为1，存G B 分量的位置为0。
@@ -57,7 +94,7 @@ def blinnear(img, pattern):
     H_RB = np.array(
         [[1, 2, 1],
          [2, 4, 2],
-         [1, 2, 1]]) / 4  # yapf: disable
+         [1, 2, 1]]) / 4  # 这两个矩阵对着rggb的pattern看一下就明白了。
 
     R = signal.convolve(img * R_m, H_RB, 'same')
     G = signal.convolve(img * G_m, H_G, 'same')
@@ -68,7 +105,7 @@ def blinnear(img, pattern):
     result_img[:, :, 0] = R
     result_img[:, :, 1] = G
     result_img[:, :, 2] = B
-    del R_m, G_m, B_m, H_RB, H_G
+    # del R_m, G_m, B_m, H_RB, H_G
     return result_img
 
 
@@ -81,11 +118,13 @@ def AH_gradient(img, pattern):
 
     Hg1 = Hg1.reshape(1, -1)
     Hg2 = Hg2.reshape(1, -1)
+    # 如果当前像素是绿色就用绿色梯度，不是绿色就用颜色加上绿色梯度
     Ga = (Rm + Bm) * (np.abs(signal.convolve(X, Hg1, 'same')) + np.abs(signal.convolve(X, Hg2, 'same')))
 
     return Ga
 
 
+# 计算梯度
 def AH_gradientX(img, pattern):
     Ga = AH_gradient(img, pattern)
 
@@ -168,43 +207,52 @@ def AH_interpolateY(img, pattern, gamma, max_value):
 
 
 def MNballset(delta):
-    #   MNballset returns a set of convolution filters describing
-    #   the relative locations in the elements of the ball set.
-    #
-    #   This algorithm was developed according to Hirakawa's master's
-    #   thesis.
-    #
-
     index = delta
     H = np.zeros((index * 2 + 1, index * 2 + 1, (index * 2 + 1) ** 2))  # initialize
 
     k = 0
     for i in range(-index, index + 1):
         for j in range(-index, index + 1):
-            if np.linalg.norm([i, j]) <= delta:
-                p = np.linalg.norm([i, j])
+            # if np.linalg.norm([i, j]) <= delta:
+            if (i ** 2 + j ** 2) <= (delta ** 2):  # 上面的if语句和这句意思是一样的。
                 H[index + i, index + j, k] = 1  # included
                 k = k + 1
-    H = H[:, :, 0:k]
+    H = H[:, :, 0:k]  # 截取最后一维0-k的元素重新赋值给H，相当于调整H的大小
+    # 最终H得到如下所示的矩阵：
+    # 当 delta 为1时，得到的三维矩阵里每一个二维矩阵都是下面这个矩阵的，一个位置上的元素为1，其余均为0，
+    # H的所有二维矩阵加起来等于下面这个矩阵。
+    # [[0. 1. 0.]
+    #  [1. 1. 1.]
+    #  [0. 1. 0.]]
+
+    # 当 delta 为2时。得到的三维矩阵里每一个二维矩阵都是下面这个矩阵的，一个位置上的元素为1，其余均为0，
+    # H的所有二维矩阵加起来等于下面这个矩阵。
+    # [[0. 0. 1. 0. 0.]
+    #  [0. 1. 1. 1. 0.]
+    #  [1. 1. 1. 1. 1.]
+    #  [0. 1. 1. 1. 0.]
+    #  [0. 0. 1. 0. 0.]]
+    # 从 delta=1 和delta=2可以看出，该函数的目的就是为了得到一个对角线长为2delta，中心点在矩阵中心的一个菱形。
+    # 菱形上的点都为1，其他地方为0，总共为1的点的个数为 2*(delta ** 2) + 2*delta + 1
+    # 再次强调一下，三维矩阵里的二维矩阵，只有一个元素为1，是所有的二维矩阵相加。才构成上面那个矩阵的。
     return H
 
 
+# 计算得到 delta L 和 delta C 和imatest 的计算方法相似。
 def MNparamA(YxLAB, YyLAB):
-    #
-    # epsilon = min(max(left, right), max(top, bottm))
     X = YxLAB
     Y = YyLAB
-    kernel_H1 = np.array([1, -1, 0])
-    kernel_H1 = kernel_H1.reshape(1, -1)
+    kernel_H1 = np.array([1, -1, 0])  # shape:(3,)
+    kernel_H1 = kernel_H1.reshape(1, -1)  # shape:(1, 3) 相当于把一个一维矩阵转成一个二维矩阵
     kernel_H2 = np.array([0, -1, 1])
     kernel_H2 = kernel_H2.reshape(1, -1)
-    kernel_V1 = kernel_H1.reshape(1, -1).T
+    kernel_V1 = kernel_H1.reshape(1, -1).T  # shape:(3, 1) 相当于把一个一维矩阵顺时针转90度。
     kernel_V2 = kernel_H2.reshape(1, -1).T
-    xxx = np.abs(signal.convolve(X[:, :, 0], kernel_H1, 'same'))
+
     eLM1 = np.maximum(np.abs(signal.convolve(X[:, :, 0], kernel_H1, 'same')),
                       np.abs(signal.convolve(X[:, :, 0], kernel_H2, 'same')))
     eLM2 = np.maximum(np.abs(signal.convolve(Y[:, :, 0], kernel_V1, 'same')),
-                      abs(signal.convolve(Y[:, :, 0], kernel_V2, 'same')))
+                      np.abs(signal.convolve(Y[:, :, 0], kernel_V2, 'same')))
     eL = np.minimum(eLM1, eLM2)
     eCx = np.maximum(
         signal.convolve(X[:, :, 1], kernel_H1, 'same') ** 2 + signal.convolve(X[:, :, 2], kernel_H1, 'same') ** 2,
@@ -213,28 +261,32 @@ def MNparamA(YxLAB, YyLAB):
         signal.convolve(Y[:, :, 1], kernel_V2, 'same') ** 2 + signal.convolve(Y[:, :, 2], kernel_V2, 'same') ** 2,
         signal.convolve(Y[:, :, 1], kernel_V1, 'same') ** 2 + signal.convolve(Y[:, :, 2], kernel_V1, 'same') ** 2)
     eC = np.minimum(eCx, eCy)
-    eL = eL
-    eC = eC ** 0.5
+    eL = eL  # 相当于imatest计算 delta L
+    eC = eC ** 0.5  # 相当于imatest计算 delta C  (delta L) ** 2 + (delta C) ** 2 = (delta E) ** 2
     return eL, eC
 
 
-# 计算相似度ƒ
+# 计算相似度ƒ 在像素周边找到和其类似像素的数量
 def MNhomogeneity(LAB_image, delta, epsilonL, epsilonC):
-    index = delta
     H = MNballset(delta)
+    # 这里是否可以改进 根据 MNballset 最后的注释，将 2*(delta ** 2) + 2*delta + 1 个二维矩阵合并成一个二维矩阵
     X = LAB_image
     epsilonC_sq = epsilonC ** 2
     h, w, c = LAB_image.shape
     K = np.zeros((h, w))
     kh, kw, kc = H.shape
-
+    print(H.shape, X.shape)  # (5, 5, 13) (788, 532, 3)
     # 注意浮点数精度可能会有影响
     for i in range(kc):
         L = np.abs(signal.convolve(X[:, :, 0], H[:, :, i], 'same') - X[:, :, 0]) <= epsilonL  # level set
         C = ((signal.convolve(X[:, :, 1], H[:, :, i], 'same') - X[:, :, 1]) ** 2 + (
                     signal.convolve(X[:, :, 2], H[:, :, i], 'same') - X[:, :, 2]) ** 2) <= epsilonC_sq  # color set
-        U = C & L  # metric neighborhood
-        K = K + U  # homogeneity
+        U = C & L  # metric neighborhood 度量邻域
+        K = K + U  # homogeneity 同质性
+        # print(L.shape, C.shape, U.shape, K.shape)  # shape 都是 (788, 532)
+        # L C U 里的元素只有 true 和 false
+        # L 和 C 同时为true，则认为该点与周围的点相似。所以K中某一个元素的值，表示该点与周围多少个点相似。
+    # print("K", K)
     return K
 
 
@@ -302,12 +354,10 @@ def AH_demosaic(img, pattern, gamma=1, max_value=255):
     print("AH demosaic start")
     imgh, imgw = img.shape
     imgs = 10  # 向外延申10个像素不改变 pattern。
-    # X,Y方向插值
+
     # 扩展大小
-    # Y = [X(n + 1:-1: 2, n + 1: -1:2,:)       X(n + 1: -1:2,:,:)        X(n + 1: -1:2, end - 1: -1:end - n,:)
-    # X(:, n + 1: -1:2,:)               X                                X(:, end - 1: -1:end - n,:)
-    # X(end - 1: -1:end - n, n + 1: -1:2,:)  X(end - 1: -1:end - n,:,:)  X(end - 1: -1:end - n, end - 1: -1:end - n,:)];
     f = np.pad(img, ((imgs, imgs), (imgs, imgs)), 'reflect')
+    # X,Y方向插值
     Yx = AH_interpolateX(f, pattern, gamma, max_value)  # 对x方向进行插值,得到的是含有RGB三个分量的数据
     Yy = AH_interpolateY(f, pattern, gamma, max_value)  # 对y方向进行插值,得到的是含有RGB三个分量的数据
     Hx = AH_gradientX(f, pattern)  # 这边计算的是梯度，梯度越小，相似度就越大
@@ -340,22 +390,24 @@ def AH_demosaic(img, pattern, gamma=1, max_value=255):
 # 改进方向：转到lab空间计算相似度，花费了大量的时间。有些改进可以在yuv域进行计算，但是lab域计算的效果还是很好的。
 def AHD(img, pattern, delta=2, gamma=1, maxvalue=255):  # delta是用来调试 artifact 的，gamma 不建议调试
     print("AHD demosaic start")
-    iterations = 2
+    iterations = 2  # 迭代
     imgh, imgw = img.shape
+    # 扩展大小
     imgs = 10  # 向外扩展10不改变原有的pattern
 
     f = np.pad(img, ((imgs, imgs), (imgs, imgs)), 'reflect')  # 扩展大小
+    # X,Y方向插值
     Yx = AH_interpolateX(f, pattern, gamma, maxvalue)  # 对x方向进行插值,得到的是含有RGB三个分量的数据
     Yy = AH_interpolateY(f, pattern, gamma, maxvalue)  # 对y方向进行插值,得到的是含有RGB三个分量的数据
     # 转LAB
     YxLAB = yuvimage.rgb2lab(Yx)
     YyLAB = yuvimage.rgb2lab(Yy)
     # 色彩差异的运算
-    epsilonL, epsilonC = MNparamA(YxLAB, YyLAB)
-    Hx = MNhomogeneity(YxLAB, delta, epsilonL, epsilonC)  # homogeneity 这边计算的是相似度，和AH算法计算梯度不同
+    epsilonL, epsilonC = MNparamA(YxLAB, YyLAB)  # 计算亮度差和色差，和imatest相似
+    Hx = MNhomogeneity(YxLAB, delta, epsilonL, epsilonC)  # homogeneity 同质性，计算相似度，找到周围有几个像素点和该点相似
     Hy = MNhomogeneity(YyLAB, delta, epsilonL, epsilonC)
     f_kernel = np.ones((3, 3))
-    Hx = signal.convolve(Hx, f_kernel, 'same')
+    Hx = signal.convolve(Hx, f_kernel, 'same')  # 进行均值滤波
     Hy = signal.convolve(Hy, f_kernel, 'same')
     # 选择 X,Y
     # set output initially to Yx
@@ -381,10 +433,6 @@ def AHD(img, pattern, delta=2, gamma=1, maxvalue=255):  # delta是用来调试 a
     YT[:, :, 2] = Bs
     # 去掉artifact
     Rsa, Gsa, Bsa = MNartifact(Rs, Gs, Bs, iterations)  # find
-    # R and B
-    # values
-    #
-
     Y = np.zeros((h, w, 3))
     Y[:, :, 0] = Rsa
     Y[:, :, 1] = Gsa
@@ -396,87 +444,44 @@ def AHD(img, pattern, delta=2, gamma=1, maxvalue=255):  # delta是用来调试 a
     return resultY
 
 
-def test_blinnear_demosaic():
-    pattern = "GRBG"
-    file_name = "../pic/demosaic/kodim19.raw"
-    maxvalue = 255
-    h = 768
-    w = 512
-    image = rawimage.read_plained_file(file_name, dtype="uint16", width=w, height=h, shift_bits=0)
-    rawimage.show_planedraw(image, w, h, pattern, sensorbit=8, compress_ratio=1)
-    result = blinnear(image, pattern)
-    height, width = image.shape
-    x = width / 100
-    y = height / 100
-    plt.figure(num='test', figsize=(x, y))
-    plt.imshow(result / maxvalue, interpolation='bicubic', vmax=1.0)
-    plt.xticks([]), plt.yticks([])  # 隐藏 X轴 和 Y轴的标记位置和labels
-    plt.show()
-    print("hello")
-    return
+def test_demosaic(image,  pattern, method="ahd"):
+    if method == "ahd":
+        result = AHD(image, pattern)
+    elif method == "ah":
+        result = AH_demosaic(image, pattern)
+    elif method == "blinnear":
+        result = blinnear(image, pattern)  # 得到的是RGB三个通道的数据
+        result = result.astype(int)  # 不加最后一句会报警告，但是AHD方法中不会，还没有深入研究。
+    else:
+        print("Please enter a correct interpolation algorithm, blinnear, ah, ahd")
+        return
 
+    rgbimage.rgb_image_show_color(result, compress_ratio=1, maxvalue=255, color="color")
 
-def test_AH_demosaic():
-    pattern = "GRBG"
-    file_name = "../pic/demosaic/kodim19.raw"
-    h = 768
-    w = 512
-    maxvalue = 255
-    image = rawimage.read_plained_file(file_name, dtype="uint16", width=w, height=h, shift_bits=0)
-    rawimage.show_planedraw(image, w, h, pattern, sensorbit=8, compress_ratio=1)
-    result = AH_demosaic(image, pattern)
-    height, width = image.shape
-    x = width / 100
-    y = height / 100
-    plt.figure(num='test', figsize=(x, y))
-    plt.imshow(result / maxvalue, interpolation='bicubic', vmax=1.0)
-    plt.xticks([]), plt.yticks([])  # 隐藏 X轴 和 Y轴的标记位置和labels
-    plt.show()
-    print("hello")
-    return
-
-
-def test_AHD_demosaic():
-    pattern = "GRBG"  # 显示正确，保存下来的图片颜色不正确
-    # pattern = "GBRG"  # 显示不正确，保存下来的图片颜色正确
-    file_name = "../pic/demosaic/kodim19.raw"
-    maxvalue = 255
-    h = 768
-    w = 512
-    image = rawimage.read_plained_file(file_name, dtype="uint16", width=w, height=h, shift_bits=0)
-    rawimage.show_planedraw(image, w, h, pattern="MONO", sensorbit=8, compress_ratio=1)
-    result = AHD(image, pattern)
-    height, width = image.shape
-    x = width / 100
-    y = height / 100
-    plt.figure(num='test', figsize=(x, y))
-    plt.imshow(result / maxvalue, interpolation='bicubic', vmax=1.0)
-    plt.xticks([]), plt.yticks([])  # 隐藏 X轴 和 Y轴的标记位置和labels
-    plt.show()
-    filename1 = file_name + "-ahd.bmp"
-    cv.imwrite(filename1, result)
-    print("hello")
+    cvimage = np.zeros(result.shape)  # plt 是按照rgb格式进行显示，opencv是按照bgr的格式进行显示，所以要进行下面的转换。
+    cvimage[:, :, 0] = result[:, :, 2]
+    cvimage[:, :, 1] = result[:, :, 1]
+    cvimage[:, :, 2] = result[:, :, 0]
+    cv.imwrite(method + "-demosaic.bmp", cvimage)
     return
 
 
 if __name__ == "__main__":
-    # test_blinnear_demosaic()
-    # test_AH_demosaic()
-    test_AHD_demosaic()
+    # 制作raw图程序例程
+    # maxvalue = 255
+    # pattern = "GRBG"
+    # image = plt.imread("../pic/demosaic/kodim19.png")
+    # if np.max(image) <= 1:
+    #     image = image * maxvalue
+    # result_image = make_mosaic(image, pattern)
+    # rawimage.write_plained_file("kodim191.raw", result_image,  dtype="uint8")
 
-    # data_R = scio.loadmat("data_R.mat")
-    # R = data_R["R"]
-    #
-    # data_G = scio.loadmat("data_G.mat")
-    # G = data_G["G"]
-    #
-    # data_B = scio.loadmat("data_B.mat")
-    # B = data_B["B"]
-    # RR,GG,BB=MNartifact(R, G, B, 2)
+    # demosaic 例程
+    pattern = "GRBG"
+    file_name = "../pic/demosaic/kodim19.raw"
+    image = rawimage.read_plained_file(file_name, dtype="uint16", width=512, height=768, shift_bits=0)
+    h, w = image.shape
+    rawimage.show_planedraw(image, w, h, pattern="MONO", sensorbit=8, compress_ratio=1)
+    test_demosaic(image, pattern, method="blinnear")
 
-    # aa = np.array([1, 2, 3, 4])
-    # aa.shape = (2, 2)
-    # print(aa)
-    # bb = aa.T
-    # print(bb)
 

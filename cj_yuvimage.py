@@ -1,5 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
+import cj_csc
 import math
 
 
@@ -13,80 +14,8 @@ def rgb_image_show(image, width, height, compress_ratio=1):
     plt.show()
 
 
-# 0~255 的 Ycbcr转换
-def ycbcr2rgb(image, width, height):
-    rgb_img = np.zeros(shape=(height, width, 3))
-    rgb_img[:, :, 0] = image[:, :, 0] + 1.402 * (image[:, :, 2] - 128)  # R= Y+1.402*(Cr-128)
-    rgb_img[:, :, 1] = image[:, :, 0] - 0.344136 * (image[:, :, 1] - 128) - 0.714136 * (
-                image[:, :, 2] - 128)  # G=Y-0.344136*(Cb-128)-0.714136*(Cr-128)
-    rgb_img[:, :, 2] = image[:, :, 0] + 1.772 * (image[:, :, 1] - 128)  # B=Y+1.772*(Cb-128)
-    rgb_img = np.clip(rgb_img, 0, 255)
-    return rgb_img
-
-
-# RGB 转 ycbcr
-def rgb2ycbcr(R, G, B):
-    size = R.shape
-    im = np.empty((size[0], size[1], 3), dtype=np.float32)
-    im[:, :, 0] = R
-    im[:, :, 1] = G
-    im[:, :, 2] = B
-
-    xform = np.array([[0.299, 0.587, 0.114], [-0.1687, -0.3313, 0.5], [0.5, -0.4187, -0.0813]])
-    ycbcr = np.dot(im, xform.T)
-    ycbcr[:, :, [1, 2]] += 128
-    # print("ycbcr = ", ycbcr)
-    return ycbcr
-
-
-def labf(t):
-    # 本算法中传入的 t 是一个二维矩阵
-    d = t ** (1 / 3)
-    index = np.where(t <= 0.008856)  # 0.008856 约等于 (6/29) 的三次方
-    d[index] = 7.787 * t[index] + 4 / 29  # 7.787 约等于 (1/3) * (29/6) * (29/6)
-    return d
-
-
-def rgb2lab(X):
-    a = np.array([
-        [3.40479, -1.537150, -0.498535],
-        [-0.969256, 1.875992, 0.041556],
-        [0.055648, -0.204043, 1.057311]])
-    # ai = np.array([
-    #     [0.38627512, 0.33488427, 0.1689713],
-    #     [0.19917304, 0.70345694, 0.06626421],
-    #     [0.01810671, 0.11812969, 0.94969014]])  # 该矩阵和下面算出来的是一样的
-    ai = np.linalg.inv(a)  # 求矩阵a的逆矩阵
-
-    h, w, c = X.shape  # X是含有RGB三个分量的数据
-    R = X[:, :, 0]
-    G = X[:, :, 1]
-    B = X[:, :, 2]
-    planed_R = R.flatten()  # 将二维矩阵转成1维矩阵
-    planed_G = G.flatten()
-    planed_B = B.flatten()
-    planed_image = np.zeros((c, h * w))  # 注意这里 planed_B 是一个二维数组
-    planed_image[0, :] = planed_R  # 将 planed_R 赋值给 planed_image 的第0行
-    planed_image[1, :] = planed_G
-    planed_image[2, :] = planed_B
-    planed_lab = np.dot(ai, planed_image)  # 相当于两个矩阵相乘 将rgb空间转到xyz空间
-    planed_1 = planed_lab[0, :]
-    planed_2 = planed_lab[1, :]
-    planed_3 = planed_lab[2, :]
-    L1 = np.reshape(planed_1, (h, w))
-    L2 = np.reshape(planed_2, (h, w))
-    L3 = np.reshape(planed_3, (h, w))
-    result_lab = np.zeros((h, w, c))
-    # color  space conversion  into LAB
-    result_lab[:, :, 0] = 116 * labf(L2 / 255) - 16
-    result_lab[:, :, 1] = 500 * (labf(L1 / 255) - labf(L2 / 255))
-    result_lab[:, :, 2] = 200 * (labf(L2 / 255) - labf(L3 / 255))
-
-    return result_lab
-
-
 def ycbcrshow(image, width, height):
-    imagergb = ycbcr2rgb(image, width, height)
+    imagergb = cj_csc.ycbcr2rgb(image, width, height)
     rgb_image_show(imagergb, width, height)
 
 
@@ -173,5 +102,5 @@ def read_yuv_file(filename, width, height, yuvformat):
 if __name__ == '__main__':
     testimg = read_yuv_file(filename='NV12_1920(1920)x1080.yuv', height=1080, width=1920, yuvformat='NV12')
     print(np.max(testimg), np.min(testimg))
-    rgb = ycbcr2rgb(testimg, height=1080, width=1920)
+    rgb = cj_csc.ycbcr2rgb(testimg, height=1080, width=1920)
     rgb_image_show(rgb/255, height=1080, width=1920, compress_ratio=1)
