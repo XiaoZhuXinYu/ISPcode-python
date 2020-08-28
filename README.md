@@ -65,6 +65,18 @@ gamma曲线拟合函数test_show_bf3a03_gamma 移动到对应的文件中。
 5. 新增了一个 cj_ccm.py 文件，但是这些函数没有测试过。
  
 
+# 20200828 17:39
+1. 新增了cj_ae.py，cj_af.py，cj_hdr.py，cj_sharpeness.py，cj_main.py五个文件。
+其中ae af main只是添加了文件，并未实现相关功能。cj_sharpeness cj_hdr 中代码还未整理。
+
+2. cj_curve_fit 中添加了曝光曲线拟合，对比度调整相关曲线。
+
+3. cj_gamma 中增加了亮度映射相关函数。
+
+4. cj_rawimage 中增加了 raw_image_show_color 函数。
+
+5. cj_rgbimage 中删除 show_bmpimage 函数，统一改成 rgb_image_show_color。
+
 
  
 

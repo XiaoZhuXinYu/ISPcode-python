@@ -1,16 +1,13 @@
 import numpy as np
-import cv2
-import math
 from matplotlib import pyplot as plt
 
 
-def rgb_image_show_color(image, compress_ratio=1, maxvalue=255,  color="color"):
+def rgb_image_show_color(image, maxvalue=255,  color="color", compress_ratio=1):
     height, width, c = image.shape
     x = width / (compress_ratio * 100)
     y = height / (compress_ratio * 100)
 
     plt.figure(num='test', figsize=(x, y))
-    # plt.imshow(image / maxvalue, interpolation='bicubic', vmax=1.0)
     if color == "gray":
         plt.imshow(image / maxvalue, cmap='gray', interpolation='bicubic', vmax=1.0)
     else:
@@ -35,29 +32,6 @@ def read_bmpimage(image1, width, height, dtype):
     return testimage
 
 
-def show_bmpimage(image, width, height, sensorbit, color="color", compress_ratio=1):
-    if sensorbit == 8:
-        image = image / 255  # 8bit sensor 所以是除255，为了和下面函数中 vmax=1进行配合
-    elif sensorbit == 10:
-        image = image / 1023  # 10bit sensor 所以是除1023，为了和下面函数中 vmax=1进行配合
-    elif sensorbit == 12:
-        image = image / 4095  # 12bit sensor 所以是除4095，为了和下面函数中 vmax=1进行配合
-    else:
-        image = image / 4095  # 12bit sensor 所以是除4095，为了和下面函数中 vmax=1进行配合
-
-    x = width / (compress_ratio * 100)
-    y = height / (compress_ratio * 100)
-    plt.figure(num='test', figsize=(x, y))
-    if color == "gray":
-        plt.imshow(image, cmap='gray', interpolation='bicubic', vmax=1.0)
-    else:
-        plt.imshow(image, interpolation='bicubic', vmax=1.0)
-
-    plt.xticks([]), plt.yticks([])  # 隐藏 X轴 和 Y轴的标记位置和labels
-    plt.show()
-    # print('show gray image')
-
-
 def rgb_separation(image):
     image = image.astype(np.float)
     R = image[:, :, 0]
@@ -72,7 +46,6 @@ if __name__ == "__main__":
     file_name1 = "../pic/pic_14.bmp"
 
     image = read_bmpimage(file_name1, 640, 480, dtype="uint8")
-    show_bmpimage(image, 640, 480, sensorbit=8, compress_ratio=1)
-
+    rgb_image_show_color(image, maxvalue=255, color="color", compress_ratio=1)
 
 

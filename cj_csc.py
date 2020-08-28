@@ -1,6 +1,5 @@
 import numpy as np
-from matplotlib import pyplot as plt
-import math
+import cj_gamma as gamma
 
 
 def ycbcr_compress(image):
@@ -26,7 +25,7 @@ def ycbcr2rgb(image, width, height):
     rgb_img = np.zeros(shape=(height, width, 3))
     rgb_img[:, :, 0] = image[:, :, 0] + 1.402 * (image[:, :, 2] - 128)  # R= Y+1.402*(Cr-128)
     rgb_img[:, :, 1] = image[:, :, 0] - 0.344136 * (image[:, :, 1] - 128) - 0.714136 * (
-                image[:, :, 2] - 128)  # G=Y-0.344136*(Cb-128)-0.714136*(Cr-128)
+            image[:, :, 2] - 128)  # G=Y-0.344136*(Cb-128)-0.714136*(Cr-128)
     rgb_img[:, :, 2] = image[:, :, 0] + 1.772 * (image[:, :, 1] - 128)  # B=Y+1.772*(Cb-128)
     rgb_img = np.clip(rgb_img, 0, 255)
     return rgb_img
@@ -94,7 +93,7 @@ def rgb2xyz(data, color_space="srgb", clip_range=[0, 65535]):
 
     if color_space == "srgb":
         # degamma / linearization
-        data = color.degamma_srgb(data, clip_range)
+        data = gamma.degamma_srgb(data, clip_range)
         data = np.float32(data)
         data = np.divide(data, clip_range[1])
 
@@ -106,7 +105,7 @@ def rgb2xyz(data, color_space="srgb", clip_range=[0, 65535]):
 
     elif color_space == "adobe-rgb-1998":
         # degamma / linearization
-        data = color.degamma_adobe_rgb_1998(data, clip_range)
+        data = gamma.degamma_adobe_rgb_1998(data, clip_range)
         data = np.float32(data)
         data = np.divide(data, clip_range[1])
 
@@ -147,7 +146,7 @@ def xyz2rgb(data, color_space="srgb", clip_range=[0, 65535]):
         output[:, :, 2] = data[:, :, 0] * 0.0557 + data[:, :, 1] * -0.2040 + data[:, :, 2] * 1.0570
 
         # gamma to retain nonlinearity
-        output = color.gamma_srgb(data, clip_range)
+        output = gamma.gamma_srgb(data, clip_range)
 
     elif color_space == "adobe-rgb-1998":
         # matrix multiplication
@@ -156,7 +155,7 @@ def xyz2rgb(data, color_space="srgb", clip_range=[0, 65535]):
         output[:, :, 2] = data[:, :, 0] * 0.0134474 + data[:, :, 1] * -0.1183897 + data[:, :, 2] * 1.0154096
 
         # gamma to retain nonlinearity
-        output = color.gamma_adobe_rgb_1998(data, clip_range)
+        output = gamma.gamma_adobe_rgb_1998(data, clip_range)
 
     elif color_space == "linear":
         # matrix multiplication
@@ -175,51 +174,29 @@ def xyz2rgb(data, color_space="srgb", clip_range=[0, 65535]):
 
 
 def get_xyz_reference(cie_version="1931", illuminant="d65"):
-    if (cie_version == "1931"):
+    if cie_version == "1931":
+        xyz_reference_dictionary = {"A": [109.850, 100.0, 35.585], "B": [99.0927, 100.0, 85.313],
+                                    "C": [98.074, 100.0, 118.232], "d50": [96.422, 100.0, 82.521],
+                                    "d55": [95.682, 100.0, 92.149], "d65": [95.047, 100.0, 108.883],
+                                    "d75": [94.972, 100.0, 122.638], "E": [100.0, 100.0, 100.0],
+                                    "F1": [92.834, 100.0, 103.665], "F2": [99.187, 100.0, 67.395],
+                                    "F3": [103.754, 100.0, 49.861], "F4": [109.147, 100.0, 38.813],
+                                    "F5": [90.872, 100.0, 98.723], "F6": [97.309, 100.0, 60.191],
+                                    "F7": [95.044, 100.0, 108.755], "F8": [96.413, 100.0, 82.333],
+                                    "F9": [100.365, 100.0, 67.868], "F10": [96.174, 100.0, 81.712],
+                                    "F11": [100.966, 100.0, 64.370], "F12": [108.046, 100.0, 39.228]}
 
-        xyz_reference_dictionary = {"A": [109.850, 100.0, 35.585], \
-                                    "B": [99.0927, 100.0, 85.313], \
-                                    "C": [98.074, 100.0, 118.232], \
-                                    "d50": [96.422, 100.0, 82.521], \
-                                    "d55": [95.682, 100.0, 92.149], \
-                                    "d65": [95.047, 100.0, 108.883], \
-                                    "d75": [94.972, 100.0, 122.638], \
-                                    "E": [100.0, 100.0, 100.0], \
-                                    "F1": [92.834, 100.0, 103.665], \
-                                    "F2": [99.187, 100.0, 67.395], \
-                                    "F3": [103.754, 100.0, 49.861], \
-                                    "F4": [109.147, 100.0, 38.813], \
-                                    "F5": [90.872, 100.0, 98.723], \
-                                    "F6": [97.309, 100.0, 60.191], \
-                                    "F7": [95.044, 100.0, 108.755], \
-                                    "F8": [96.413, 100.0, 82.333], \
-                                    "F9": [100.365, 100.0, 67.868], \
-                                    "F10": [96.174, 100.0, 81.712], \
-                                    "F11": [100.966, 100.0, 64.370], \
-                                    "F12": [108.046, 100.0, 39.228]}
-
-    elif (cie_version == "1964"):
-
-        xyz_reference_dictionary = {"A": [111.144, 100.0, 35.200], \
-                                    "B": [99.178, 100.0, 84.3493], \
-                                    "C": [97.285, 100.0, 116.145], \
-                                    "D50": [96.720, 100.0, 81.427], \
-                                    "D55": [95.799, 100.0, 90.926], \
-                                    "D65": [94.811, 100.0, 107.304], \
-                                    "D75": [94.416, 100.0, 120.641], \
-                                    "E": [100.0, 100.0, 100.0], \
-                                    "F1": [94.791, 100.0, 103.191], \
-                                    "F2": [103.280, 100.0, 69.026], \
-                                    "F3": [108.968, 100.0, 51.965], \
-                                    "F4": [114.961, 100.0, 40.963], \
-                                    "F5": [93.369, 100.0, 98.636], \
-                                    "F6": [102.148, 100.0, 62.074], \
-                                    "F7": [95.792, 100.0, 107.687], \
-                                    "F8": [97.115, 100.0, 81.135], \
-                                    "F9": [102.116, 100.0, 67.826], \
-                                    "F10": [99.001, 100.0, 83.134], \
-                                    "F11": [103.866, 100.0, 65.627], \
-                                    "F12": [111.428, 100.0, 40.353]}
+    elif cie_version == "1964":
+        xyz_reference_dictionary = {"A": [111.144, 100.0, 35.200], "B": [99.178, 100.0, 84.3493],
+                                    "C": [97.285, 100.0, 116.145], "D50": [96.720, 100.0, 81.427],
+                                    "D55": [95.799, 100.0, 90.926], "D65": [94.811, 100.0, 107.304],
+                                    "D75": [94.416, 100.0, 120.641], "E": [100.0, 100.0, 100.0],
+                                    "F1": [94.791, 100.0, 103.191], "F2": [103.280, 100.0, 69.026],
+                                    "F3": [108.968, 100.0, 51.965], "F4": [114.961, 100.0, 40.963],
+                                    "F5": [93.369, 100.0, 98.636], "F6": [102.148, 100.0, 62.074],
+                                    "F7": [95.792, 100.0, 107.687], "F8": [97.115, 100.0, 81.135],
+                                    "F9": [102.116, 100.0, 67.826], "F10": [99.001, 100.0, 83.134],
+                                    "F11": [103.866, 100.0, 65.627], "F12": [111.428, 100.0, 40.353]}
 
     else:
         print("Warning! cie_version must be 1931 or 1964.")
@@ -229,7 +206,7 @@ def get_xyz_reference(cie_version="1931", illuminant="d65"):
 
 
 def xyz2lab(self, cie_version="1931", illuminant="d65"):
-    xyz_reference = color.get_xyz_reference(cie_version, illuminant)
+    xyz_reference = get_xyz_reference(cie_version, illuminant)
 
     data = self.data
     data[:, :, 0] = data[:, :, 0] / xyz_reference[0]
@@ -269,7 +246,7 @@ def lab2xyz(self, cie_version="1931", illuminant="d65"):
     output[np.invert(mask)] -= 16 / 116
     output[np.invert(mask)] /= 7.787
 
-    xyz_reference = color.get_xyz_reference(cie_version, illuminant)
+    xyz_reference = get_xyz_reference(cie_version, illuminant)
 
     output = np.float32(output)
     output[:, :, 0] = output[:, :, 0] * xyz_reference[0]

@@ -1,8 +1,7 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy import ndimage
-import cj_rawimage
+import cj_rawimage as rawimage
 
 
 # 根据边进行处理, 推荐使用这种方法
@@ -109,26 +108,26 @@ def DPC(img, thre, mode, pattern):
     if pattern == 'MONO':
         result = mono_DPC(img, thre)
     else:
-        C1, C2, C3, C4 = cj_rawimage.simple_separation(img)
+        C1, C2, C3, C4 = rawimage.simple_separation(img)
         # print(C1)
         C1 = mono_DPC(C1, thre)
         C2 = mono_DPC(C2, thre)
         C3 = mono_DPC(C3, thre)
         C4 = mono_DPC(C4, thre)
 
-        result = cj_rawimage.simple_integration(C1, C2, C3, C4)
+        result = rawimage.simple_integration(C1, C2, C3, C4)
     return result
 
 
 def test_DPC():
-    img = cj_rawimage.read_plained_file("DSC16_1339_768x512_rggb_wait_dpc.raw", dtype="uint16", width=768, height=512,
+    img = rawimage.read_plained_file("DSC16_1339_768x512_rggb_wait_dpc.raw", dtype="uint16", width=768, height=512,
                                         shift_bits=0)
     global a
     a = 0
     thre_ratio = 1
     # thre_ratio = 300   # MEAN
     result = DPC(img, thre_ratio, mode="extreme", pattern="RGGB")
-    cj_rawimage.show_planedraw(result, 768, 512, pattern='MONO', sensorbit=10, compress_ratio=1)
+    rawimage.show_planedraw(result, width=768, height=512, pattern='gray', sensorbit=10, compress_ratio=1)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,6 @@
 import cj_rawimage as rawimage
 import cj_yuvimage as yuvimage
 import cj_rgbimage as rgbimage
-from matplotlib import pyplot as plt
 from scipy import signal
 import numpy as np
 import cv2 as cv
@@ -456,7 +455,7 @@ def test_demosaic(image,  pattern, method="ahd"):
         print("Please enter a correct interpolation algorithm, blinnear, ah, ahd")
         return
 
-    rgbimage.rgb_image_show_color(result, compress_ratio=1, maxvalue=255, color="color")
+    rgbimage.rgb_image_show_color(result, maxvalue=255, color="color", compress_ratio=1)
 
     cvimage = np.zeros(result.shape)  # plt 是按照rgb格式进行显示，opencv是按照bgr的格式进行显示，所以要进行下面的转换。
     cvimage[:, :, 0] = result[:, :, 2]
@@ -481,7 +480,7 @@ if __name__ == "__main__":
     file_name = "../pic/demosaic/kodim19.raw"
     image = rawimage.read_plained_file(file_name, dtype="uint16", width=512, height=768, shift_bits=0)
     h, w = image.shape
-    rawimage.show_planedraw(image, w, h, pattern="MONO", sensorbit=8, compress_ratio=1)
+    rawimage.show_planedraw(image, w, h, pattern="gray", sensorbit=8, compress_ratio=1)
     test_demosaic(image, pattern, method="blinnear")
 
 

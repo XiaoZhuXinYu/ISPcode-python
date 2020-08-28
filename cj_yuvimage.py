@@ -1,6 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
-import cj_csc
+import cj_csc as csc
 import math
 
 
@@ -15,7 +15,7 @@ def rgb_image_show(image, width, height, compress_ratio=1):
 
 
 def ycbcrshow(image, width, height):
-    imagergb = cj_csc.ycbcr2rgb(image, width, height)
+    imagergb = csc.ycbcr2rgb(image, width, height)
     rgb_image_show(imagergb, width, height)
 
 
@@ -102,5 +102,5 @@ def read_yuv_file(filename, width, height, yuvformat):
 if __name__ == '__main__':
     testimg = read_yuv_file(filename='NV12_1920(1920)x1080.yuv', height=1080, width=1920, yuvformat='NV12')
     print(np.max(testimg), np.min(testimg))
-    rgb = cj_csc.ycbcr2rgb(testimg, height=1080, width=1920)
+    rgb = csc.ycbcr2rgb(testimg, height=1080, width=1920)
     rgb_image_show(rgb/255, height=1080, width=1920, compress_ratio=1)

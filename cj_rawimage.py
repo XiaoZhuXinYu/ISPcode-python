@@ -6,8 +6,6 @@ from mpl_toolkits.mplot3d import Axes3D
 
 def read_plained_file(file_path_name, dtype, width, height, shift_bits):
     frame = np.fromfile(file_path_name, dtype=dtype)  # 相比于open，该函数可以指定数据类型
-    # print("b shape",b.shape)
-    # print('%#x'%b[0])
     frame = frame[0:height * width]  # 这句是为了防止图像中有无效数据
     frame.shape = [height, width]  # 将数组转化为二维矩阵
     frame = np.right_shift(frame, shift_bits)  # 考虑数据大小端问题，进行移位
@@ -157,7 +155,17 @@ def raw_image_show_fakecolor(image,  width, height, pattern, compress_ratio=1): 
     print('show fake color image')
 
 
-def show_planedraw(image1,  width, height, pattern, sensorbit, compress_ratio=1):
+def raw_image_show_color(image, width, height, compress_ratio=1):
+    x = width / (compress_ratio * 100)
+    y = height / (compress_ratio * 100)
+
+    plt.figure(num='test', figsize=(x, y))
+    plt.imshow(image, interpolation='bicubic', vmax=1.0)
+    plt.xticks([]), plt.yticks([])  # 隐藏 X轴 和 Y轴的标记位置和labels
+    plt.show()
+
+
+def show_planedraw(image1,  width=640, height=480, pattern="gray", sensorbit=12, compress_ratio=1):
     # image = read_plained_file(file_path_name, dtype, width, height,  shift_bits)
     image = image1
     if sensorbit == 8:
@@ -169,8 +177,10 @@ def show_planedraw(image1,  width, height, pattern, sensorbit, compress_ratio=1)
     else:
         image = image / 4095  # 12bit sensor 所以是除4095，为了和下面函数中 vmax=1进行配合
 
-    if pattern == "MONO":
+    if pattern == "gray":
         raw_image_show_gray(image, width, height, compress_ratio)
+    elif pattern == "color":
+        raw_image_show_color(image, width, height, compress_ratio)
     else:
         raw_image_show_fakecolor(image, width, height, pattern, compress_ratio)
 
@@ -252,5 +262,5 @@ if __name__ == "__main__":
     print('This is main of module')
     file_name1 = "../pic/BayerRGGB_1920_1080_12bits_D65-6450.raw"
     iamge = read_plained_file(file_name1, dtype="uint16", width=1920, height=1080, shift_bits=0)
-    show_planedraw(iamge, 1920, 1080, "RGGB", sensorbit=12, compress_ratio=1)
+    show_planedraw(iamge, 1920, 1080, pattern="RGGB", sensorbit=12, compress_ratio=1)
     # # show_mipiraw_mipi10()

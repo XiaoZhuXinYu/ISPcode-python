@@ -1,7 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 import cv2
-import cj_rawimage
+import cj_rawimage as rawimage
 
 
 def apply_shading_to_image_base(img, block_size, shading_R, shading_GR, shading_GB, shading_B, pattern, ratio):
@@ -22,7 +22,7 @@ def apply_shading_to_image_base(img, block_size, shading_R, shading_GR, shading_
     new_shading_GB = GB_color_shading * new_luma_shading
     new_shading_B = B_color_shading * new_luma_shading
 
-    R, GR, GB, B = cj_rawimage.bayer_channel_separation(img, pattern)
+    R, GR, GB, B = rawimage.bayer_channel_separation(img, pattern)
     HH, HW = R.shape
     size_new = (HW, HH)  # 注意opencv和python的不同
     # 插值的方法的选择
@@ -38,7 +38,7 @@ def apply_shading_to_image_base(img, block_size, shading_R, shading_GR, shading_
     GB_new = GB * ex_GB_gain_map
     B_new = B * ex_B_gain_map
 
-    new_image = cj_rawimage.bayer_channel_integration(R_new, GR_new, GB_new, B_new, pattern)
+    new_image = rawimage.bayer_channel_integration(R_new, GR_new, GB_new, B_new, pattern)
     # 值缩减到0~1023
     new_image = np.clip(new_image, a_min=0, a_max=1023)
     return new_image
@@ -60,7 +60,7 @@ def apply_shading_to_image(img, block_size, shading_R, shading_GR, shading_GB, s
     new_shading_GB = GB_color_shading * new_luma_shading
     new_shading_B = B_color_shading * new_luma_shading
 
-    R, GR, GB, B = cj_rawimage.bayer_channel_separation(img, pattern)
+    R, GR, GB, B = rawimage.bayer_channel_separation(img, pattern)
     HH, HW = R.shape
     size_new = (HW + block_size, HH + block_size)
     # 插值的方法的选择
@@ -80,7 +80,7 @@ def apply_shading_to_image(img, block_size, shading_R, shading_GR, shading_GB, s
     GB_new = GB * GB_gain_map
     B_new = B * B_gain_map
 
-    new_image = cj_rawimage.bayer_channel_integration(R_new, GR_new, GB_new, B_new, pattern)
+    new_image = rawimage.bayer_channel_integration(R_new, GR_new, GB_new, B_new, pattern)
     # 值缩减到0~1023
     new_image = np.clip(new_image, a_min=0, a_max=1023)
     return new_image
@@ -88,7 +88,7 @@ def apply_shading_to_image(img, block_size, shading_R, shading_GR, shading_GB, s
 
 def create_lsc_data_base(img, block_size, pattern):
     # 分开四个颜色通道
-    R, GR, GB, B = cj_rawimage.bayer_channel_separation(img, pattern)
+    R, GR, GB, B = rawimage.bayer_channel_separation(img, pattern)
     # print(img.shape, R.shape)
 
     # 每张的高宽
@@ -145,7 +145,7 @@ def create_lsc_data_base(img, block_size, pattern):
 
 def create_lsc_data(img, block_size, pattern):
     # 分开四个颜色通道
-    R, GR, GB, B = cj_rawimage.bayer_channel_separation(img, pattern)
+    R, GR, GB, B = rawimage.bayer_channel_separation(img, pattern)
     # print(img.shape, R.shape)
 
     # 每张的高宽
@@ -270,21 +270,21 @@ def create_lsc_data(img, block_size, pattern):
 
 
 if __name__ == "__main__":
-    img = cj_rawimage.read_plained_file("../pic/D65_4032_2752_GRBG_2_BLC.raw", dtype="uint16", width=4032, height=2752,
+    img = rawimage.read_plained_file("../pic/D65_4032_2752_GRBG_2_BLC.raw", dtype="uint16", width=4032, height=2752,
                                         shift_bits=0)
     block_size = 16
     pattern = "GRBG"
     shading_R, shading_GR, shading_GB, shading_B = create_lsc_data_base(img, block_size, pattern)
-    img2 = cj_rawimage.read_plained_file("../pic/D65_4032_2752_GRBG_1_BLC.raw", dtype="uint16", width=4032, height=2752,
+    img2 = rawimage.read_plained_file("../pic/D65_4032_2752_GRBG_1_BLC.raw", dtype="uint16", width=4032, height=2752,
                                          shift_bits=0)
-    cj_rawimage.show_planedraw(img2, width=4032, height=2752, pattern="MONO", sensorbit=10, compress_ratio=1)
+    rawimage.show_planedraw(img2, width=4032, height=2752, pattern="gray", sensorbit=10, compress_ratio=1)
 
     # luma 和color shading
     new_image = apply_shading_to_image_base(img=img2, block_size=block_size, shading_R=shading_R, shading_GR=shading_GR,
                                             shading_GB=shading_GB, shading_B=shading_B, pattern="GRBG", ratio=1)
 
     print(np.min(new_image), np.max(new_image))
-    # cj_rawimage.show_planedraw(new_image, width=4032, height=2752, pattern=pattern, sensorbit=10, compress_ratio=1)
-    cj_rawimage.show_planedraw(new_image, width=4032, height=2752, pattern="MONO", sensorbit=10, compress_ratio=1)
+    # rawimage.show_planedraw(new_image, width=4032, height=2752, pattern=pattern, sensorbit=10, compress_ratio=1)
+    rawimage.show_planedraw(new_image, width=4032, height=2752, pattern="gray", sensorbit=10, compress_ratio=1)
 
 

@@ -2,7 +2,7 @@
 import numpy as np
 import cv2
 import os
-import cj_bmpimage
+import cj_rgbimage as rgbimage
 
 
 def gaussian(x, sigma):
@@ -194,9 +194,9 @@ if __name__ == "__main__":
             filename1 = filename + "-bil.bmp"
             cv2.imwrite(filename1, filtered_image_OpenCV)
 
-    # image = cj_bmpimage.read_bmpimage(file_name1, 512, 512, dtype="uint8")
+    # image = rgbimage.read_bmpimage(file_name1, 512, 512, dtype="uint8")
     # filtered_image1 = bilateral_filter1(image, 3, 3, 3)
-    # cj_bmpimage.show_bmpimage(filtered_image1, 512, 512, sensorbit=8, compress_ratio=1)
+    # rgbimage.rgb_image_show_color(filtered_image1, maxvalue=255, color="color", compress_ratio=1)
     # cv2.imwrite("../pic/lena_gray_denoised.bmp", filtered_image1)
 
 

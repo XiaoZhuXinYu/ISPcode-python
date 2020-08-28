@@ -11,7 +11,8 @@ from pycallgraph import GlobbingFilter
 
 import cj_yuvimage as yuvimage
 import cj_rawimage as rawimage
-import cj_bmpimage as bmpimage
+import cj_rgbimage as rgbimage
+import cj_csc as csc
 
 
 # 传统灰度世界法，只进行求平均，效率高
@@ -30,7 +31,7 @@ def grey_world(R, G, B):
 # 动态阈值法，在ycbcr域上进行，算法简单，便于实现，来自一篇论文
 def auto_threshold(R, G, B):
     x, y = R.shape
-    ycc = yuvimage.rgb2ycbcr(R, G, B)
+    ycc = csc.rgb2ycbcr(R, G, B)
     Lu = ycc[:, :, 0]  # Lu Cb Cr 三者的shape是一样的。
     Cb = ycc[:, :, 1]
     Cr = ycc[:, :, 2]
@@ -296,7 +297,7 @@ def raw_white_balance(image, type, sensorbit, pattern):
 
     result_image = apply_raw(pattern, R, GR, GB, B, R_gain, G_gain, B_gain, smax)
 
-    # rawimage.show_planedraw(result_image, width=4032, height=2742, pattern="MONO", sensorbit=10, compress_ratio=1)
+    # rawimage.show_planedraw(result_image, width=4032, height=2742, pattern="gray", sensorbit=10, compress_ratio=1)
     # rawimage.show_planedraw(result_image, width=4032, height=2752, pattern="GRBG", sensorbit=10, compress_ratio=1)
 
     h, w = R.shape
@@ -310,12 +311,12 @@ def raw_white_balance(image, type, sensorbit, pattern):
     img2[:, :, 1] = GR2
     img2[:, :, 2] = B2
 
-    bmpimage.show_bmpimage(img, width=w, height=h, sensorbit=10, color="color", compress_ratio=1)
-    bmpimage.show_bmpimage(img2, width=w, height=h, sensorbit=10, color="color", compress_ratio=1)
+    rawimage.show_planedraw(img, w, h, pattern="color", sensorbit=10, compress_ratio=1)
+    rawimage.show_planedraw(img2, w, h, pattern="color", sensorbit=10, compress_ratio=1)
 
 
 def RGB_white_balance(image, type):
-    R, G, B = bmpimage.rgb_separation(image)
+    R, G, B = rgbimage.rgb_separation(image)
     if type == "grey_world":
         R_gain, G_gain, B_gain = grey_world(R, G, B)
     elif type == "auto_threshold":
@@ -330,9 +331,9 @@ def RGB_white_balance(image, type):
         R_gain, G_gain, B_gain = grey_edge(R, G, B, njet=1, mink_norm=5, sigma=2)
 
     result_image = apply_to_rgb(R, G, B, R_gain, G_gain, B_gain)
-    h, w = R.shape
-    bmpimage.show_bmpimage(image, width=w, height=h, sensorbit=8, color="color", compress_ratio=1)
-    bmpimage.show_bmpimage(result_image, width=w, height=h, sensorbit=8, color="color", compress_ratio=1)
+
+    rgbimage.rgb_image_show_color(image, maxvalue=255,  color="color", compress_ratio=1)
+    rgbimage.rgb_image_show_color(result_image, maxvalue=255,  color="color", compress_ratio=1)
 
 
 if __name__ == "__main__":
@@ -370,7 +371,7 @@ if __name__ == "__main__":
         # 以下是main函数的内容
         # file_name = "../pic/awb/D65_4032_2752_GRBG_1_LSC.raw"
         # image = rawimage.read_plained_file(file_name, dtype="uint16", width=4032, height=2752, shift_bits=0)
-        # # rawimage.show_planedraw(image, width=4032, height=2752, pattern="MONO", sensorbit=10, compress_ratio=1)
+        # # rawimage.show_planedraw(image, width=4032, height=2752, pattern="gray", sensorbit=10, compress_ratio=1)
 
         image = plt.imread('../pic/awb/8D5U5568_D_N.png')  # 读取png的图片自己没有生成，采用库函数
         if np.max(image) <= 1:  # png图片会小于1

@@ -1,8 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
 import cj_rawimage as rawimage
-import cj_bmpimage as bmpmage
+import cj_rgbimage as rgbmage
 
 
 # 统计直方图
@@ -88,7 +87,7 @@ def get_statistcs_point():
 
 
 def test_show_bmp_histogram(image1, dtype, width, height, start_x, start_y, len_x, len_y, step_x, step_y, num):
-    image = bmpmage.read_bmpimage(image1, width, height, dtype)
+    image = rgbmage.read_bmpimage(image1, width, height, dtype)
     testimage = image[start_y:(len_y + start_y):step_y, start_x:(len_x + start_x):step_x]
     # array_bins = np.arange(0, 256, 255 / num)  # 等差数列数组支持任意个数组元素
     array_bins = np.array([0, 40, 100, 170, 250, 256])  # 特殊数组单独添加测试
@@ -126,7 +125,8 @@ def test_show_bmp_histogram(image1, dtype, width, height, start_x, start_y, len_
 
 if __name__ == "__main__":
     print('This is main of module')
-    file_name1 = "../pic/qrcode/pic_6.bmp"
+    # file_name1 = "../pic/qrcode/pic_0.bmp"
+    file_name1 = "../pic/run/exp4/paper/7-1/pic_5.bmp"
     # get_statistcs_test()
     test_show_bmp_histogram(file_name1, dtype="uint8", width=640, height=480, start_x=160, start_y=160, len_x=320,
                             len_y=320, step_x=4, step_y=4, num=5)
