@@ -51,7 +51,7 @@ def sharpen_gaussian(RGB, gaussian_kernel_size=[5, 5], gaussian_sigma=2.0, slope
     # create gaussian kernel
     gaussian_kernel = gaussian(gaussian_kernel_size, gaussian_sigma)
 
-    if np.ndim(RGB > 2):
+    if np.ndim(RGB) > 2:
         image_blur = np.empty(np.shape(RGB), dtype=np.float32)
         for i in range(0, np.shape(RGB)[2]):
             image_blur[:, :, i] = signal.convolve2d(RGB[:, :, i], gaussian_kernel, mode="same", boundary="symm")

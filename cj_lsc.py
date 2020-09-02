@@ -1,6 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
-import cv2
+import cv2 as cv
 import cj_rawimage as rawimage
 
 
@@ -26,10 +26,10 @@ def apply_shading_to_image_base(img, block_size, shading_R, shading_GR, shading_
     HH, HW = R.shape
     size_new = (HW, HH)  # 注意opencv和python的不同
     # 插值的方法的选择
-    ex_R_gain_map = cv2.resize(new_shading_R, size_new, interpolation=cv2.INTER_CUBIC)
-    ex_GR_gain_map = cv2.resize(new_shading_GR, size_new, interpolation=cv2.INTER_CUBIC)
-    ex_GB_gain_map = cv2.resize(new_shading_GB, size_new, interpolation=cv2.INTER_CUBIC)
-    ex_B_gain_map = cv2.resize(new_shading_B, size_new, interpolation=cv2.INTER_CUBIC)
+    ex_R_gain_map = cv.resize(new_shading_R, size_new, interpolation=cv.INTER_CUBIC)
+    ex_GR_gain_map = cv.resize(new_shading_GR, size_new, interpolation=cv.INTER_CUBIC)
+    ex_GB_gain_map = cv.resize(new_shading_GB, size_new, interpolation=cv.INTER_CUBIC)
+    ex_B_gain_map = cv.resize(new_shading_B, size_new, interpolation=cv.INTER_CUBIC)
 
     R_new = R * ex_R_gain_map
     print("R_new.shape:", R_new.shape, "R.shape:", R.shape, "ex_R_gain_map.shape:", ex_R_gain_map.shape)
@@ -64,10 +64,10 @@ def apply_shading_to_image(img, block_size, shading_R, shading_GR, shading_GB, s
     HH, HW = R.shape
     size_new = (HW + block_size, HH + block_size)
     # 插值的方法的选择
-    ex_R_gain_map = cv2.resize(new_shading_R, size_new, interpolation=cv2.INTER_CUBIC)
-    ex_GR_gain_map = cv2.resize(new_shading_GR, size_new, interpolation=cv2.INTER_CUBIC)
-    ex_GB_gain_map = cv2.resize(new_shading_GB, size_new, interpolation=cv2.INTER_CUBIC)
-    ex_B_gain_map = cv2.resize(new_shading_B, size_new, interpolation=cv2.INTER_CUBIC)
+    ex_R_gain_map = cv.resize(new_shading_R, size_new, interpolation=cv.INTER_CUBIC)
+    ex_GR_gain_map = cv.resize(new_shading_GR, size_new, interpolation=cv.INTER_CUBIC)
+    ex_GB_gain_map = cv.resize(new_shading_GB, size_new, interpolation=cv.INTER_CUBIC)
+    ex_B_gain_map = cv.resize(new_shading_B, size_new, interpolation=cv.INTER_CUBIC)
     # 裁剪到原图大小
     half_b_size = int(block_size / 2)
     R_gain_map = ex_R_gain_map[half_b_size:half_b_size + HH, half_b_size:half_b_size + HW]

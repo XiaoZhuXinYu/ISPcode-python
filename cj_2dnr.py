@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 import numpy as np
-import cv2
+import cv2 as cv
 import os
 import cj_rgbimage as rgbimage
 
@@ -188,15 +188,15 @@ if __name__ == "__main__":
 
         for f in files:
             filename = os.path.join(root, f)
-            f = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
+            f = cv.imread(filename, cv.IMREAD_GRAYSCALE)
             noised_img = np.uint8(f)
-            filtered_image_OpenCV = cv2.bilateralFilter(noised_img, 3, 3, 3)
+            filtered_image_OpenCV = cv.bilateralFilter(noised_img, 3, 3, 3)
             filename1 = filename + "-bil.bmp"
-            cv2.imwrite(filename1, filtered_image_OpenCV)
+            cv.imwrite(filename1, filtered_image_OpenCV)
 
     # image = rgbimage.read_bmpimage(file_name1, 512, 512, dtype="uint8")
     # filtered_image1 = bilateral_filter1(image, 3, 3, 3)
     # rgbimage.rgb_image_show_color(filtered_image1, maxvalue=255, color="color", compress_ratio=1)
-    # cv2.imwrite("../pic/lena_gray_denoised.bmp", filtered_image1)
+    # cv.imwrite("../pic/lena_gray_denoised.bmp", filtered_image1)
 
 

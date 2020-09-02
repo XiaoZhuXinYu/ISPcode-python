@@ -78,7 +78,10 @@ gamma曲线拟合函数test_show_bf3a03_gamma 移动到对应的文件中。
 5. cj_rgbimage 中删除 show_bmpimage 函数，统一改成 rgb_image_show_color。
 
 
- 
+# 20200902 16:26
+1. 统一接口风格，将cv2.改为cv.
+2. cj_csc.py 文件增加 rgb2hsv 和 hsv2rgb 函数。
+3. cj_histogram.py 文件 test_show_bmp_histogram 函数增加一个传参，用于判断是否显示直方图。
 
 
 

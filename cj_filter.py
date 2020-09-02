@@ -1,4 +1,4 @@
-import cv2
+import cv2 as cv
 import numpy as np
 import math
 from scipy import signal
@@ -35,7 +35,7 @@ def gaussian_box(a, b, sigma=10):
 # 自己实现的filter
 def self_filter(img, fil):
     # opencv 实现方式
-    # res = cv2.filter2D(img, -1, fil)
+    # res = cv.filter2D(img, -1, fil)
     # return rs
 
     # 卷积核翻转
@@ -50,17 +50,17 @@ def self_filter(img, fil):
     res[:, :, 0] = signal.convolve(img[:, :, 0], fil, mode="same")  # 使用signal的卷积函数
     res[:, :, 1] = signal.convolve(img[:, :, 1], fil, mode="same")  # 使用signal的卷积函数
     res[:, :, 2] = signal.convolve(img[:, :, 2], fil, mode="same")  # 使用signal的卷积函数
-    # res = cv2.filter2D(img, -1, fil)
+    # res = cv.filter2D(img, -1, fil)
     return res
 
 
 def gaussBlur(img, sigma, H, W, _boundary='fill', _fillvalue=0):
-    gaussKernel_x = cv2.getGaussianKernel(W, sigma, cv2.CV_64F)
+    gaussKernel_x = cv.getGaussianKernel(W, sigma, cv.CV_64F)
     gaussKernel_x = gaussKernel_x.T  # 构建水平方向上的高斯卷积核
     gaussBlur_x = signal.convolve2d(img, gaussKernel_x, mode="same",
                                     boundary=_boundary, fillvalue=_fillvalue)  # 图像矩阵与水平高斯核卷积
 
-    gaussKernel_y = cv2.getGaussianKernel(H, sigma, cv2.CV_64F)  # 构建垂直方向上的高斯卷积核
+    gaussKernel_y = cv.getGaussianKernel(H, sigma, cv.CV_64F)  # 构建垂直方向上的高斯卷积核
     gaussBlur_xy = signal.convolve2d(gaussBlur_x, gaussKernel_y, mode="same",
                                      boundary=_boundary, fillvalue=_fillvalue)  # 与垂直方向上的高斯卷核
     return gaussBlur_xy
@@ -80,14 +80,14 @@ if __name__ == "__main__":
     # # plt.imsave("res2.jpg",res2)
     # plt.show()
 
-    img = cv2.imread("../pic/lena_gray_noised.bmp", 0)
-    cv2.imshow("img", img)
+    img = cv.imread("../pic/lena_gray_noised.bmp", 0)
+    cv.imshow("img", img)
 
     blurImg = gaussBlur(img, 1, 9, 9, "symm")   # 高斯平滑(使用自己的函数)
     blurImg = np.round(blurImg)  # 返回浮点数四舍五入的值
     blurImg = blurImg.astype(np.uint8)  # 将浮点数转成uint8
 
-    blurImg2 = cv2.GaussianBlur(img, (9, 9), 2)  # 高斯平滑(使用OpenCv提供的函数)
-    cv2.imshow("blur", blurImg)
-    cv2.imshow("blur2", blurImg2)
-    cv2.waitKey()
+    blurImg2 = cv.GaussianBlur(img, (9, 9), 2)  # 高斯平滑(使用OpenCv提供的函数)
+    cv.imshow("blur", blurImg)
+    cv.imshow("blur2", blurImg2)
+    cv.waitKey()

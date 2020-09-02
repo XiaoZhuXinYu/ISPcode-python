@@ -64,7 +64,7 @@ def test_draw_samplepoint():
         [0x70, 0x80, 0xa0, 0xe0, 0x100, 0x120, 0x130, 0x150, 0x180, 0x1c0, 0x1f0, 0x230, 0x260, 0x2a0, 0x2e0, 0x320,
          0x360, 0x3b0, 0x3f0, 0x440, 0x480, 0x4c0, 0x510, 0x570, 0x5b0, 0x610])
     # plt.scatter(Xi, Yi, color="red", label="Sample Point", linewidth=1)
-    plt.scatter(Yi7, xdata7, color="red", label="Sample Point", linewidth=1)
+    plt.scatter(Yi6, xdata6, color="red", label="Sample Point", linewidth=1)
     plt.show()
 
 
@@ -93,29 +93,33 @@ def test_curvefit():
 
     xdata5 = np.array(
         [0.36, 0.25, 0.19, 0.54, 0.42, 0.35, 0.50, 0.19, 0.28, 0.49, 0.43, 0.50, 0.23, 0.29, 0.38, 0.45,
-         0.33, 0.47, 0.48, 0.47])
+         0.33, 0.47, 0.48])
     Yi5 = np.array(
         [0.59, 0.45, 0.35, 0.89, 0.71, 0.61, 0.84, 0.39, 0.56, 0.84, 0.72, 0.84, 0.53, 0.62, 0.82, 0.74,
-         0.65, 0.77, 0.85, 0.97])
+         0.65, 0.77, 0.85])
 
     xdata6 = np.array(
-        [0.33, 0.57, 0.56, 0.23, 0.51, 0.77, 0.24, 0.78, 0.66, 0.20, 0.43, 0.22, 0.76, 0.20, 0.34])
+        [0.33, 0.57, 0.56, 0.23, 0.51, 0.24, 0.20, 0.43, 0.22, 0.20, 0.34])
     Yi6 = np.array(
-        [0.42, 0.67, 0.62, 0.36, 0.53, 0.77, 0.28, 0.78, 0.66, 0.30, 0.43, 0.25, 0.76, 0.26, 0.42])
+        [0.42, 0.67, 0.62, 0.36, 0.53, 0.28, 0.30, 0.43, 0.25, 0.26, 0.42])
 
     xdata7 = np.array(
         [0.36, 0.25, 0.19, 0.54, 0.42, 0.35, 0.50, 0.19, 0.28, 0.49, 0.43, 0.50, 0.23, 0.29, 0.38, 0.45,
-         0.33, 0.47, 0.48, 0.47, 0.33, 0.57, 0.56, 0.23, 0.51, 0.77, 0.24, 0.78, 0.66, 0.20, 0.43, 0.22, 0.76, 0.20,
-         0.34])
+         0.33, 0.47, 0.48, 0.33, 0.57, 0.56, 0.23, 0.51, 0.24, 0.20, 0.43, 0.22, 0.20, 0.34])
     Yi7 = np.array(
         [0.59, 0.45, 0.35, 0.89, 0.71, 0.61, 0.84, 0.39, 0.56, 0.84, 0.72, 0.84, 0.53, 0.62, 0.82, 0.74,
-         0.65, 0.77, 0.85, 0.97, 0.42, 0.67, 0.62, 0.36, 0.53, 0.77, 0.28, 0.78, 0.66, 0.30, 0.43, 0.25, 0.76, 0.26,
-         0.42])
+         0.65, 0.77, 0.85, 0.42, 0.67, 0.62, 0.36, 0.53, 0.28, 0.30, 0.43, 0.25, 0.26, 0.42])
+
+    xdata8 = np.array(
+        [2.08, 2.15, 2.16, 2.26, 2.28, 2.15, 2.34, 2.56, 2.63, 2.72, 2.82, 3.37, 4.05])
+    Yi8 = np.array(
+        [2.08, 2.96, 3.42, 3.18, 3.39, 2.78, 6.69, 9.38, 12.5, 16.25, 20.23, 30.13, 36])
+
     # 下面是曲线拟合的三种方式 polyfit, curve_fit 和 leastsq 实际选用一种即可
 
-    para = np.polyfit(Yi5, xdata5, 1)  # 该函数主要做多项式拟合，如果是指数，对数 推荐使用后面两种方式
+    para = np.polyfit(xdata8, Yi8, 1)  # 该函数主要做多项式拟合，如果是指数，对数 推荐使用后面两种方式
     # y_fitted = para[0] * (xdata ** 2) + para[1] * xdata + para[2]
-    y_fitted = para[0] * Yi5 + para[1]
+    y_fitted = para[0] * xdata8 + para[1]
 
     # para, pcov = curve_fit(Fun_curve_fit, xdata, ydata)
     # y_fitted = Fun_curve_fit(xdata, para[0], para[1], para[2])  # 画出拟合后的曲线
@@ -126,8 +130,8 @@ def test_curvefit():
 
     plt.figure()
     # plt.plot(xdata, ydata, 'r', label='Original curve')
-    plt.scatter(Yi5, xdata5, color="red", label="Sample Point", linewidth=1)
-    plt.plot(Yi5, y_fitted, '-b', label='Fitted curve')
+    plt.scatter(xdata8, Yi8, color="red", label="Sample Point", linewidth=1)
+    plt.plot(xdata8, y_fitted, '-b', label='Fitted curve')
     plt.legend()
     plt.show()
     print(para)

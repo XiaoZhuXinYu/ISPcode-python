@@ -1,5 +1,5 @@
 import os
-import cv2
+import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
 import cj_csc as csc
@@ -7,29 +7,23 @@ import cj_csc as csc
 
 def load_images(path, mode='color'):
     """
-   FUNCTION: load_images
-        Call to load images colored or grayscale and stack them. 
-     INPUTS:
-        path = location of image
-        mode = 'grayscale' or 'colored'
-    OUTPUTS:
-        read data file
+   FUNCTION: 将几张需要做hdr合成的图像加入队列中
     """
-    # '-----------------------------------------------------------------------------#
     image_stack = []
     i = 0
     for filename in os.listdir(path):
-        print("Loading... /" + filename + "...as Image_stack[" + str(i) + "]")
+        print("Loading... /" + filename + "...as Image_stack[" + str(i) + "]")  # 这样可以显示出 str(i) 的内容
+        # print("Loading... /" + filename + "...as Image_stack[str(i)]")  # 这样就只能单单显示字符串 str(i)
+
         if mode == 'color':
-            image = cv2.imread(os.path.join(path, filename))
+            image = cv.imread(os.path.join(path, filename))
+            temp = image[:, :, 0].copy()
+            image[:, :, 0] = image[:, :, 2]
+            image[:, :, 2] = temp  # 将BGR 转成 RGB
         else:  # mode == 'gray':
-            image = cv2.imread(os.path.join(path, filename))
-        temp = image[:, :, 0].copy()
-        image[:, :, 0] = image[:, :, 2]
-        image[:, :, 2] = temp
+            image = cv.imread(os.path.join(path, filename))
         image_stack.append(image)
         i += 1
-    print("\n")
     return image_stack
 
 
@@ -51,7 +45,7 @@ def alignment(image_stack):
     for i in range(D):
         if np.shape(image_stack[i])[:2] != (min(sizes[:, 0]), min(sizes[:, 1])):
             print("Detected Non-Uniform Sized Image" + str(i) + " ... Resolving ...")
-            image_stack[i] = cv2.resize(image_stack[i], (min(sizes[:, 1]), min(sizes[:, 0])))
+            image_stack[i] = cv.resize(image_stack[i], (min(sizes[:, 1]), min(sizes[:, 0])))
             print(" *Done")
     print("\n")
     return image_stack
@@ -68,10 +62,10 @@ def contrast(image, ksize=1):
         contrast measure
     """
     # '-----------------------------------------------------------------------------#
-    image = cv2.cvtColor(image.astype('uint8'), cv2.COLOR_BGR2GRAY)
-    laplacian = cv2.Laplacian(image.astype('float64'), cv2.CV_64F, ksize)
-    C = cv2.convertScaleAbs(laplacian)
-    C = cv2.medianBlur(C.astype('float32'), 5)
+    image = cv.cvtColor(image.astype('uint8'), cv.COLOR_BGR2GRAY)
+    laplacian = cv.Laplacian(image.astype('float64'), cv.CV_64F, ksize)
+    C = cv.convertScaleAbs(laplacian)
+    C = cv.medianBlur(C.astype('float32'), 5)
     return C.astype('float64')
 
 
@@ -100,7 +94,7 @@ def exposedness(image, sigma=0.2):
         exposedness measure
     """
     # '-----------------------------------------------------------------------------#
-    image = cv2.normalize(image, None, alpha=0.0, beta=1.0, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_64F)
+    image = cv.normalize(image, None, alpha=0.0, beta=1.0, norm_type=cv.NORM_MINMAX, dtype=cv.CV_64F)
     gauss_curve = lambda i: np.exp(-((i - 0.5) ** 2) / (2 * sigma * sigma))
     R_gauss_curve = gauss_curve(image[:, :, 0])
     G_gauss_curve = gauss_curve(image[:, :, 1])
@@ -170,7 +164,7 @@ def measures_fusion_naive(image_stack, weight_maps, blurType=None, blurSize=(0, 
         print("Performing Gaussian-Blur Blending")
         Rij = []
         for i in range(D):
-            weight_map = cv2.GaussianBlur(weight_maps[:, :, i], blurSize, blurSigma)
+            weight_map = cv.GaussianBlur(weight_maps[:, :, i], blurSize, blurSigma)
             Rijk = image_stack[i] * np.dstack([weight_map, weight_map, weight_map])
             Rij.append(Rijk)
             img_fused += Rijk
@@ -179,7 +173,7 @@ def measures_fusion_naive(image_stack, weight_maps, blurType=None, blurSize=(0, 
         print("Performing Bilateral-Blur Blending")
         Rij = []
         for i in range(D):
-            weight_map = cv2.bilateralFilter(weight_maps[:, :, i].astype('float32'), blurSigma, blurSize[0],
+            weight_map = cv.bilateralFilter(weight_maps[:, :, i].astype('float32'), blurSigma, blurSize[0],
                                              blurSize[1])
             Rijk = image_stack[i] * np.dstack([weight_map, weight_map, weight_map])
             Rij.append(Rijk)
@@ -219,12 +213,12 @@ def multires_pyramid(image, weight_map, levels):
     for i in range(levels):
         imgW = np.shape(imgGpyr[i])[1]
         imgH = np.shape(imgGpyr[i])[0]
-        imgGpyr.append(cv2.pyrDown(imgGpyr[i].astype('float64')))
+        imgGpyr.append(cv.pyrDown(imgGpyr[i].astype('float64')))
 
     for i in range(levels):
         imgW = np.shape(wGpyr[i])[1]
         imgH = np.shape(wGpyr[i])[0]
-        wGpyr.append(cv2.pyrDown(wGpyr[i].astype('float64')))
+        wGpyr.append(cv.pyrDown(wGpyr[i].astype('float64')))
 
     imgLpyr = [imgGpyr[levels]]
     wLpyr = [wGpyr[levels]]
@@ -232,12 +226,12 @@ def multires_pyramid(image, weight_map, levels):
     for i in range(levels, 0, -1):
         imgW = np.shape(imgGpyr[i - 1])[1]
         imgH = np.shape(imgGpyr[i - 1])[0]
-        imgLpyr.append(imgGpyr[i - 1] - cv2.resize(cv2.pyrUp(imgGpyr[i]), (imgW, imgH)))
+        imgLpyr.append(imgGpyr[i - 1] - cv.resize(cv.pyrUp(imgGpyr[i]), (imgW, imgH)))
 
     for i in range(levels, 0, -1):
         imgW = np.shape(wGpyr[i - 1])[1]
         imgH = np.shape(wGpyr[i - 1])[0]
-        wLpyr.append(wGpyr[i - 1] - cv2.resize(cv2.pyrUp(wGpyr[i]), (imgW, imgH)))
+        wLpyr.append(wGpyr[i - 1] - cv.resize(cv.pyrUp(wGpyr[i]), (imgW, imgH)))
 
     return imgLpyr[::-1], wGpyr
 
@@ -288,8 +282,8 @@ def measures_fusion_multires(image_stack, weight_maps, levels=6):
     for i in range(levels - 1):
         imgH = np.shape(image_stack[0])[0]
         imgW = np.shape(image_stack[0])[1]
-        layerx = cv2.pyrUp(finalPyramid[i + 1][0])
-        blended_final += cv2.resize(layerx, (imgW, imgH))
+        layerx = cv.pyrUp(finalPyramid[i + 1][0])
+        blended_final += cv.resize(layerx, (imgW, imgH))
 
     blended_final[blended_final < 0] = 0
     blended_final[blended_final > 255] = 255
@@ -347,13 +341,13 @@ def meanImage(image_stack, save=False):
     gg = np.zeros((H, W), dtype='float64')
     bb = np.zeros((H, W), dtype='float64')
     for i in range(N):
-        r, g, b = cv2.split(image_stack[i].astype('float64'))
+        r, g, b = cv.split(image_stack[i].astype('float64'))
         rr += r.astype('float64')
         gg += g.astype('float64')
         bb += b.astype('float64')
     MeanImage = np.dstack([rr / N, gg / N, bb / N]).astype('uint8')
     if save:
-        cv2.imwrite('img_MeanImage.png', MeanImage)
+        cv.imwrite('img_MeanImage.png', MeanImage)
     return MeanImage
 
 
@@ -394,9 +388,11 @@ def visualize_maps(image_stack, weights=[1, 1, 1], save=False):
 
 
 if __name__ == "__main__":
-    path = r"input"
+    path = "../pic/hdr"
 
-    cwd = os.getcwd()
+    cwd = os.getcwd()  # 获取当前系统路径
+    print("cwd = ", cwd)
+    print("path = ", path)
     image_stack = load_images(path)
     image_stack = alignment(image_stack)
     # resultsPath = path+"\\results"
@@ -411,17 +407,17 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------------------#
     # Compute Quality measures multiplied and weighted with weights[x,y,z]
     weight_map = scalar_weight_map(image_stack, weights=[1, 1, 1])
-    # weight_map      = ef.scalar_weight_map(image_stack, weights = [0,0,0]) #Performs Pyramid Fusion
+    # weight_map      = scalar_weight_map(image_stack, weights = [0,0,0]) #Performs Pyramid Fusion
 
     "Original Image"
     # ------------------------------------------------------------------------------#
     # load original image i.e center image probably has the median Exposure value(EV)
-    # filename = ef.os.listdir(path)[len(ef.os.listdir(path))/2]
-    # original_image = ef.cv2.imread(ef.os.path.join(path, filename), ef.cv2.IMREAD_COLOR)
-    # ef.cv2.imshow('Original Image', original_image)
-    # ef.cv2.waitKey(0)
-    # ef.cv2.destroyAllWindows()
-    # ef.cv2.imwrite('img_CenterOriginal.png', original_image.astype('uint8'))
+    # filename = os.listdir(path)[len(os.listdir(path))/2]
+    # original_image = cv.imread(os.path.join(path, filename), cv.IMREAD_COLOR)
+    # cv.imshow('Original Image', original_image)
+    # cv.waitKey(0)
+    # cv.destroyAllWindows()
+    # cv.imwrite('img_CenterOriginal.png', original_image.astype('uint8'))
 
     "Naive Exposure Fusion"
     # ------------------------------------------------------------------------------#
@@ -467,9 +463,9 @@ if __name__ == "__main__":
 
     "Display Intermediate Steps and Save"
     # ------------------------------------------------------------------------------#
-    # ef.visualize_maps(image_stack, save=False)
+    # visualize_maps(image_stack, save=False)
 
     "Compute Mean of Image Stack"
     # ------------------------------------------------------------------------------#
-    # final_imageE = ef.meanImage(image_stack, save=False)
+    # final_imageE = meanImage(image_stack, save=False)
     os.chdir(cwd)

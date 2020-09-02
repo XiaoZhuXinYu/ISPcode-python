@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import matplotlib.pyplot as plt
 import cj_rawimage as rawimage
 import cj_rgbimage as rgbmage
@@ -86,7 +87,7 @@ def get_statistcs_point():
     y = np.array([])
 
 
-def test_show_bmp_histogram(image1, dtype, width, height, start_x, start_y, len_x, len_y, step_x, step_y, num):
+def test_show_bmp_histogram(image1, dtype, width, height, start_x, start_y, len_x, len_y, step_x, step_y, num, show):
     image = rgbmage.read_bmpimage(image1, width, height, dtype)
     testimage = image[start_y:(len_y + start_y):step_y, start_x:(len_x + start_x):step_x]
     # array_bins = np.arange(0, 256, 255 / num)  # 等差数列数组支持任意个数组元素
@@ -101,13 +102,14 @@ def test_show_bmp_histogram(image1, dtype, width, height, start_x, start_y, len_
         percent[i] = n[0][i] / n[0].sum()
     print("直方图统计百分比:", percent * 100)
 
-    plt.rcParams['font.sans-serif'] = ['SimHei']
-    plt.rcParams['axes.unicode_minus'] = False  # 添加这两句支持plt中文显示
+    if show:
+        plt.rcParams['font.sans-serif'] = ['SimHei']
+        plt.rcParams['axes.unicode_minus'] = False  # 添加这两句支持plt中文显示
 
-    plt.xlabel('灰度值')
-    plt.ylabel('个数')
-    plt.title('histogram')
-    plt.show()
+        plt.xlabel('灰度值')
+        plt.ylabel('个数')
+        plt.title('histogram')
+        plt.show()
 
     testimage = image[0:start_y:step_y, 0:width:step_x]
     testimage_flatten = testimage.flatten()  # 将二维数组转成一维数组
@@ -120,13 +122,26 @@ def test_show_bmp_histogram(image1, dtype, width, height, start_x, start_y, len_
     testimage = image[start_y:height:step_y, (start_x + len_x):width:step_x]
     testimage_flatten = testimage.flatten()  # 将二维数组转成一[[维数组
     print("ave4:", format(testimage_flatten.mean(), '.1f'))
-    # cv2.imwrite("../pic/123456.bmp", image)
+    # cv.imwrite("../pic/123456.bmp", image)
 
 
 if __name__ == "__main__":
     print('This is main of module')
-    # file_name1 = "../pic/qrcode/pic_0.bmp"
-    file_name1 = "../pic/run/exp4/paper/7-1/pic_5.bmp"
-    # get_statistcs_test()
-    test_show_bmp_histogram(file_name1, dtype="uint8", width=640, height=480, start_x=160, start_y=160, len_x=320,
-                            len_y=320, step_x=4, step_y=4, num=5)
+    # file_name1 = "../pic/qrcode/pic_99.bmp"
+    # # file_name1 = "../pic/run/exp4/paper/7-1/pic_5.bmp"
+    # # get_statistcs_test()
+    # test_show_bmp_histogram(file_name1, dtype="uint8", width=640, height=480, start_x=160, start_y=160, len_x=320,
+    #                         len_y=320, step_x=4, step_y=4, num=5, show=1)
+
+    for root, dirs, files in os.walk("../pic/qrcode/"):
+
+        # root 表示当前正在访问的文件夹路径
+        # dirs 表示该文件夹下的子目录名list
+        # files 表示该文件夹下的文件list
+
+        # 遍历文件
+        for f in files:
+            filename = os.path.join(root, f)
+            print(filename)
+            test_show_bmp_histogram(filename, dtype="uint8", width=640, height=480, start_x=160, start_y=160, len_x=320,
+                                    len_y=320, step_x=4, step_y=4, num=5, show=0)
