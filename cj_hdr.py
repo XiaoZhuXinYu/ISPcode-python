@@ -29,23 +29,24 @@ def load_images(path, mode='color'):
 
 def alignment(image_stack):
     """
-   FUNCTION: alignmentent
-        Call to Create Uniform Images by adjusting image sizes
+   FUNCTION: 将所有图像的大小调整成一致
      INPUTS:
-        image_stack = stack of images from load_images
+        image_stack = 参与融合的图像栈
     OUTPUTS:
-        images files of the same size
+        调整完大小的图像栈
     """
     # '-----------------------------------------------------------------------------#
     sizes = []
-    D = len(image_stack)
+    D = len(image_stack)  # 几张图片长度就是几，测试例子中为4
     for i in range(D):
-        sizes.append(np.shape(image_stack[i]))
+        sizes.append(np.shape(image_stack[i]))  # 将每张图的shape复制给 sizes, 即(高度，宽度，3) 3表示rgb三个通道
     sizes = np.array(sizes)
+
     for i in range(D):
         if np.shape(image_stack[i])[:2] != (min(sizes[:, 0]), min(sizes[:, 1])):
+            # 判断 当前图像 的宽高跟 所有参与融合图像 的最小宽，最小高是否相同
             print("Detected Non-Uniform Sized Image" + str(i) + " ... Resolving ...")
-            image_stack[i] = cv.resize(image_stack[i], (min(sizes[:, 1]), min(sizes[:, 0])))
+            image_stack[i] = cv.resize(image_stack[i], (min(sizes[:, 1]), min(sizes[:, 0])))  # 不相同就调整大小
             print(" *Done")
     print("\n")
     return image_stack
@@ -62,31 +63,31 @@ def contrast(image, ksize=1):
         contrast measure
     """
     # '-----------------------------------------------------------------------------#
-    image = cv.cvtColor(image.astype('uint8'), cv.COLOR_BGR2GRAY)
+    image = cv.cvtColor(image.astype('uint8'), cv.COLOR_BGR2GRAY)  # rgb转y，注意参数不能选择 COLOR_RGB2GRAY
     laplacian = cv.Laplacian(image.astype('float64'), cv.CV_64F, ksize)
-    C = cv.convertScaleAbs(laplacian)
-    C = cv.medianBlur(C.astype('float32'), 5)
+    C = cv.convertScaleAbs(laplacian)  # 取绝对值
+    C = cv.medianBlur(C.astype('float32'), 5)  # 中值滤波
     return C.astype('float64')
 
 
 def saturation(image):
     """
    FUNCTION: saturation
-        Call to compute second quality measure - st.dev across RGB channels
+        得到融合图像饱和度所占有的比例
      INPUTS:
         image = input image (colored)
     OUTPUTS:
         saturation measure
     """
     # '-----------------------------------------------------------------------------#
-    S = np.std(image, 2)
+    S = np.std(image, 2)  # 计算标准差，要注意axis参数的用法。
     return S.astype('float64')
 
 
 def exposedness(image, sigma=0.2):
     """
    FUNCTION: exposedness
-        Call to compute third quality measure - exposure using a gaussian curve
+        得到融合图像曝光部分所占的比例
      INPUTS:
         image = input image (colored)
         sigma = gaussian curve parameter
@@ -94,7 +95,7 @@ def exposedness(image, sigma=0.2):
         exposedness measure
     """
     # '-----------------------------------------------------------------------------#
-    image = cv.normalize(image, None, alpha=0.0, beta=1.0, norm_type=cv.NORM_MINMAX, dtype=cv.CV_64F)
+    image = cv.normalize(image, None, alpha=0.0, beta=1.0, norm_type=cv.NORM_MINMAX, dtype=cv.CV_64F)  # 将图像进行 0-1 归一化
     gauss_curve = lambda i: np.exp(-((i - 0.5) ** 2) / (2 * sigma * sigma))
     R_gauss_curve = gauss_curve(image[:, :, 0])
     G_gauss_curve = gauss_curve(image[:, :, 1])
@@ -105,49 +106,45 @@ def exposedness(image, sigma=0.2):
 
 def scalar_weight_map(image_stack, weights=[1, 1, 1]):
     """
-   FUNCTION: scalar_weight_map
-        Call to forcefully "AND"-combine all quality measures defined 
-     INPUTS:
-        image_measures = stack of quality measures computed for image i 
-        image_measures[contrast, saturation, exposedness]
-        weights = weight for each quality measure : weights[wc, ws, we]
+   FUNCTION: 得到image_stack 里每个像素的变换权重
+   INPUTS:
+        image_measures 以及 对比度，饱和度，亮度的权重
     OUTPUTS:
-        scalar_weight_map for particular image
+        得到一个和 image_stack 维数，大小都相同的一个权重表，后续hdr算法根据 image_stack 和得到的权重表进行融合。
     """
     # '-----------------------------------------------------------------------------#
+    # print("image_stack[0].shape:", image_stack[0].shape)  # (428, 642, 3)
     H = np.shape(image_stack[0])[0]
     W = np.shape(image_stack[0])[1]
     D = len(image_stack)
     Wijk = np.zeros((H, W, D), dtype='float64')
-    wc = weights[0]
+    wc = weights[0]  # 确认对比度，饱和度，曝光的比例
     ws = weights[1]
     we = weights[2]
     print("Computing Weight Maps from Measures using: C=%1.1d, S=%1.1d, E=%1.1d" % (wc, ws, we))
 
     epsilon = 0.000005
     for i in range(D):
-        C = contrast(image_stack[i])
+        C = contrast(image_stack[i])  # C.shape=(428, 642) S E 的shape和C相同
         S = saturation(image_stack[i])
         E = exposedness(image_stack[i])
-        Wijk[:, :, i] = (np.power(C, wc) * np.power(S, ws) * np.power(E, we)) + epsilon
-    normalizer = np.sum(Wijk, 2)
+        Wijk[:, :, i] = (np.power(C, wc) * np.power(S, ws) * np.power(E, we)) + epsilon  # Wijk.shape=(428, 642, 4)
+    normalizer = np.sum(Wijk, 2)  # normalizer.shape=(428, 642) 这里要注意sum第二个参数的用法
 
     for i in range(D):
-        Wijk[:, :, i] = np.divide(Wijk[:, :, i], normalizer)
-    print(" *Done")
-    print("\n")
-
+        # Wijk[:, :, i] 和 normalizer 的 shape 是相同的。
+        Wijk[:, :, i] = np.divide(Wijk[:, :, i], normalizer)  # 和直接用 / 一样，都是矩阵的对应元素相除。
+    print("*Done\n")
     return Wijk.astype('float64')
 
 
 def measures_fusion_naive(image_stack, weight_maps, blurType=None, blurSize=(0, 0), blurSigma=15):
     """
    FUNCTION: measures_fusion_naive
-        Call to fuse normalized weightmaps and their images
+         调用图像和权重进行融合归一化
      INPUTS:
-        image_stack = lis contains the stack of "exposure-bracketed" images 
-        image_stack[img_exposure1, img_exposure2, ... img_exposureN] in order
-        weight_maps = scalar_weight_map for N images
+        image_stack = 图像栈
+        weight_maps = 权重
         blurType    = gaussian or bilateral filter applied to weight-map
         blurSize/Sigma = blurring parameters
     OUTPUTS:
@@ -157,7 +154,7 @@ def measures_fusion_naive(image_stack, weight_maps, blurType=None, blurSize=(0, 
     # '-----------------------------------------------------------------------------#
     H = np.shape(image_stack[0])[0]
     W = np.shape(image_stack[0])[1]
-    D = len(image_stack)
+    D = len(image_stack)  # 图片的数量
     img_fused = np.zeros((H, W, 3), dtype='float64')
 
     if blurType == 'gaussian':
@@ -174,7 +171,7 @@ def measures_fusion_naive(image_stack, weight_maps, blurType=None, blurSize=(0, 
         Rij = []
         for i in range(D):
             weight_map = cv.bilateralFilter(weight_maps[:, :, i].astype('float32'), blurSigma, blurSize[0],
-                                             blurSize[1])
+                                            blurSize[1])
             Rijk = image_stack[i] * np.dstack([weight_map, weight_map, weight_map])
             Rij.append(Rijk)
             img_fused += Rijk
@@ -182,28 +179,29 @@ def measures_fusion_naive(image_stack, weight_maps, blurType=None, blurSize=(0, 
         print("Performing Naive Blending")
         Rij = []
         for i in range(D):
-            Rijk = image_stack[i] * np.dstack([weight_maps[:, :, i], weight_maps[:, :, i], weight_maps[:, :, i]])
+            tmp = np.dstack([weight_maps[:, :, i], weight_maps[:, :, i], weight_maps[:, :, i]])  # shape: (428, 642, 3)
+            Rijk = image_stack[i] * tmp  # shape: (428, 642, 3)
+            print("shape:", tmp.shape, image_stack[i].shape, Rijk.shape)
             Rij.append(Rijk)
             img_fused += Rijk
 
-    print(" *Done")
-    print("\n")
+    print(" *Done\n")
 
     return img_fused, Rij
 
 
 def multires_pyramid(image, weight_map, levels):
     """
-   FUNCTION: multires_pyramid
-        Call to compute image and weights pyramids
+   FUNCTION: multires_pyramid 多分辨率金字塔
+        Call to compute image and weights pyramids 计算图像和权重金字塔
      INPUTS:
-        image_stack = lis contains the stack of "exposure-bracketed" images 
+        image_stack = list contains the stack of "exposure-bracketed" images
         image_stack[img_exposure1, img_exposure2, ... img_exposureN] in order
-        weight_maps = scalar_weight_map for N images
-        levels = height of pyramid to use including base pyramid base
+        weight_maps = scalar_weight_map for N images N张图像的标量权重图
+        levels = height of pyramid to use including base pyramid base 要使用的金字塔高度，包括基础金字塔底
     OUTPUTS:
-        imgLpyr = list containing image laplacian pyramid
-        wGpyr   = list containing weight gaussian pyramid
+        imgLpyr = list containing image laplacian pyramid 包含图像拉普拉斯金字塔的列表
+        wGpyr   = list containing weight gaussian pyramid 包含权重高斯金字塔的列表
     """
     # '-----------------------------------------------------------------------------#
     levels = levels - 1
@@ -211,13 +209,7 @@ def multires_pyramid(image, weight_map, levels):
     wGpyr = [weight_map]
 
     for i in range(levels):
-        imgW = np.shape(imgGpyr[i])[1]
-        imgH = np.shape(imgGpyr[i])[0]
         imgGpyr.append(cv.pyrDown(imgGpyr[i].astype('float64')))
-
-    for i in range(levels):
-        imgW = np.shape(wGpyr[i])[1]
-        imgH = np.shape(wGpyr[i])[0]
         wGpyr.append(cv.pyrDown(wGpyr[i].astype('float64')))
 
     imgLpyr = [imgGpyr[levels]]
@@ -228,7 +220,6 @@ def multires_pyramid(image, weight_map, levels):
         imgH = np.shape(imgGpyr[i - 1])[0]
         imgLpyr.append(imgGpyr[i - 1] - cv.resize(cv.pyrUp(imgGpyr[i]), (imgW, imgH)))
 
-    for i in range(levels, 0, -1):
         imgW = np.shape(wGpyr[i - 1])[1]
         imgH = np.shape(wGpyr[i - 1])[0]
         wLpyr.append(wGpyr[i - 1] - cv.resize(cv.pyrUp(wGpyr[i]), (imgW, imgH)))
@@ -238,20 +229,18 @@ def multires_pyramid(image, weight_map, levels):
 
 def measures_fusion_multires(image_stack, weight_maps, levels=6):
     """
-   FUNCTION: measures_fusion_multires
-        Call to perform multiresolution blending
+   FUNCTION: measures_fusion_multires 多分辨率曝光融合
      INPUTS:
         image_stack = lis contains the stack of "exposure-bracketed" images 
         image_stack[img_exposure1, img_exposure2, ... img_exposureN] in order
-        levels = desired height of the pyramids
-        weight_maps = scalar_weight_map for N images
+        levels = desired height of the pyramids 金字塔的期望高度
+        weight_maps = scalar_weight_map for N images N张图像的标量权重图
     OUTPUTS:
         finalImage = single exposure fused image
     """
     # '-----------------------------------------------------------------------------#
     print("Performing Multiresolution Blending using: " + str(levels) + " Pyramid levels")
-    D = np.shape(image_stack)[0]
-
+    D = np.shape(image_stack)[0]  # 表示图像栈中一共有几张图
     imgPyramids = []
     wPyramids = []
     # 图像和权重展开
@@ -288,8 +277,7 @@ def measures_fusion_multires(image_stack, weight_maps, levels=6):
     blended_final[blended_final < 0] = 0
     blended_final[blended_final > 255] = 255
     finalImage.append(blended_final)
-    print(" *Done")
-    print("\n")
+    print(" *Done\n")
 
     return finalImage[0].astype('uint8')
 
@@ -300,7 +288,7 @@ def measures_fusion_simple(image_stack, max_value=255):
     sigma = 0.5
     gauss_curve = lambda i: np.exp(-((i - 0.5) ** 2) / (2 * sigma * sigma))
 
-    nromal = round((D - 1) / 2)
+    nromal = round((D - 1) / 2)  # 四舍五入
     ycc_out = np.zeros([H, W, C])
     y_out = np.zeros([H, W])
     ycc_weight_sum = np.zeros([H, W])
@@ -311,7 +299,7 @@ def measures_fusion_simple(image_stack, max_value=255):
         weight = gauss_curve(y / max_value)
         y_out = y_out + y * weight
         ycc_weight_sum = ycc_weight_sum + weight
-        if i == nromal:
+        if i == nromal:  # 这里没看懂
             ycc_out[:, :, 1] = ycc[:, :, 1]
             ycc_out[:, :, 2] = ycc[:, :, 2]
 
@@ -322,118 +310,41 @@ def measures_fusion_simple(image_stack, max_value=255):
     return rgb_out
 
 
-def meanImage(image_stack, save=False):
-    """
-   FUNCTION: meanImage
-        Call to perform mean image blending
-     INPUTS:
-        image_stack = lis contains the stack of "exposure-bracketed" images 
-        image_stack[img_exposure1, img_exposure2, ... img_exposureN] in order
-        save = save figures to directory
-    OUTPUTS:
-        mean of all the images in the stack
-    """
-    # '-----------------------------------------------------------------------------#
-    N = len(image_stack)
-    H = np.shape(image_stack[0])[0]
-    W = np.shape(image_stack[0])[1]
-    rr = np.zeros((H, W), dtype='float64')
-    gg = np.zeros((H, W), dtype='float64')
-    bb = np.zeros((H, W), dtype='float64')
-    for i in range(N):
-        r, g, b = cv.split(image_stack[i].astype('float64'))
-        rr += r.astype('float64')
-        gg += g.astype('float64')
-        bb += b.astype('float64')
-    MeanImage = np.dstack([rr / N, gg / N, bb / N]).astype('uint8')
-    if save:
-        cv.imwrite('img_MeanImage.png', MeanImage)
-    return MeanImage
-
-
-def visualize_maps(image_stack, weights=[1, 1, 1], save=False):
-    """
-   FUNCTION: measures_fusion_multires
-        Call to perform multiresolution blending
-     INPUTS:
-        image_stack = lis contains the stack of "exposure-bracketed" images 
-        image_stack[img_exposure1, img_exposure2, ... img_exposureN] in order
-        weights = importance factor for each measure C,S,E
-        save = save figures to directory
-    OUTPUTS:
-        images of contrast, saturation, exposure, and combined weight for image N
-    """
-    # '-----------------------------------------------------------------------------#
-    for N in range(len(image_stack)):
-        img_contrast = contrast(image_stack[N])
-        img_saturation = saturation(image_stack[N])
-        img_exposedness = exposedness(image_stack[N])
-        # weight_map      = scalar_weight_map([image_stack[N]], weights)
-        print("Displaying Measures and Weight Map for Image_stack[" + str(N) + "]")
-
-        if save:
-            plt.imsave('img_contrast' + str(N) + '.png', img_contrast, cmap='gray', dpi=1800)
-            plt.imsave('img_saturation' + str(N) + '.png', img_saturation, cmap='gray', dpi=1800)
-            plt.imsave('img_exposedness' + str(N) + '.png', img_exposedness, cmap='gray', dpi=1800)
-        else:
-            plt.figure(1)
-            plt.imshow(img_contrast.astype('float'), cmap='gray')
-            plt.figure(2)
-            plt.imshow(img_saturation, cmap='gray')
-            plt.figure(3)
-            plt.imshow(img_exposedness, cmap='gray')
-            # plt.figure(4)
-            # plt.imshow(weight_map[:,:,0],cmap='gray')  # .astype('uint8')
-    print(" *Done\n")
-
-
 if __name__ == "__main__":
     path = "../pic/hdr"
-
     cwd = os.getcwd()  # 获取当前系统路径
-    print("cwd = ", cwd)
-    print("path = ", path)
-    image_stack = load_images(path)
-    image_stack = alignment(image_stack)
-    # resultsPath = path+"\\results"
-    resultsPath = cwd + "results"
+    image_stack = load_images(path)  # 把要参数hdr融合的图片加入到栈中。
+    image_stack = alignment(image_stack)  # 把要参数hdr融合的图片大小调整一致。image_stack[0].shape为(428, 642, 3)
+
+    resultsPath = cwd + "/results"  # 不要把融合后的图像放到 path ，否则下次运行程序又会加到 image_stack 。
+    print("resultsPath = ", resultsPath)
     if os.path.isdir(resultsPath):
-        os.chdir(resultsPath)
+        os.chdir(resultsPath)  # 改变当前的系统路径
     else:
         os.mkdir(resultsPath)
         os.chdir(resultsPath)
 
     "Compute Quality Measures"
     # ------------------------------------------------------------------------------#
-    # Compute Quality measures multiplied and weighted with weights[x,y,z]
-    weight_map = scalar_weight_map(image_stack, weights=[1, 1, 1])
-    # weight_map      = scalar_weight_map(image_stack, weights = [0,0,0]) #Performs Pyramid Fusion
-
-    "Original Image"
-    # ------------------------------------------------------------------------------#
-    # load original image i.e center image probably has the median Exposure value(EV)
-    # filename = os.listdir(path)[len(os.listdir(path))/2]
-    # original_image = cv.imread(os.path.join(path, filename), cv.IMREAD_COLOR)
-    # cv.imshow('Original Image', original_image)
-    # cv.waitKey(0)
-    # cv.destroyAllWindows()
-    # cv.imwrite('img_CenterOriginal.png', original_image.astype('uint8'))
+    weight_map = scalar_weight_map(image_stack, weights=[1, 1, 1])  # weight_map.shape (428, 642, 4)
 
     "Naive Exposure Fusion"
     # ------------------------------------------------------------------------------#
     final_imageA, RijA = measures_fusion_naive(image_stack, weight_map)
 
-    plt.figure(2)
+    plt.figure(num='Naive Exposure Fusion')
     plt.imshow(final_imageA / 255)
+    plt.xticks([]), plt.yticks([])  # 隐藏 X轴 和 Y轴的标记位置和labels
     plt.show()
 
-    "Blurred Exposure Fusion"
+    "Blurred Exposure Fusion"  # 模糊曝光融合
     # ------------------------------------------------------------------------------#
     final_imageB, RijB = measures_fusion_naive(image_stack, weight_map, blurType='gaussian', blurSize=(0, 0),
                                                blurSigma=15)
 
-    plt.figure(2)
+    plt.figure(num='Blurred Exposure Fusion')
     plt.imshow(final_imageB / 255)
+    plt.xticks([]), plt.yticks([])  # 隐藏 X轴 和 Y轴的标记位置和labels
     plt.show()
 
     "Bilateral Exposure Fusion"
@@ -441,31 +352,27 @@ if __name__ == "__main__":
     final_imageC, RijC = measures_fusion_naive(image_stack, weight_map, blurType='bilateral', blurSize=(115, 115),
                                                blurSigma=51)
 
-    plt.figure(2)
+    plt.figure(num='Bilateral Exposure Fusion')
     plt.imshow(final_imageC / 255)
+    plt.xticks([]), plt.yticks([])  # 隐藏 X轴 和 Y轴的标记位置和labels
     plt.show()
 
-    "Multiresolution Exposure Fusion"
+    "Multiresolution Exposure Fusion"  # 多分辨率曝光融合
     # ------------------------------------------------------------------------------#
     final_imageD = measures_fusion_multires(image_stack, weight_map, levels=6)
 
-    plt.figure(1)
-    plt.imshow(final_imageD)
+    plt.figure(num='Multiresolution Exposure Fusion')
+    plt.imshow(final_imageD / 255)
+    plt.xticks([]), plt.yticks([])  # 隐藏 X轴 和 Y轴的标记位置和labels
     plt.show()
 
-    "simple Exposure Fusion"
+    "simple Exposure Fusion"  # 简单曝光融合
     # ------------------------------------------------------------------------------#
     final_imageE = measures_fusion_simple(image_stack)
 
-    plt.figure(2)
+    plt.figure(num='simple Exposure Fusion')
     plt.imshow(final_imageE / 255)
+    plt.xticks([]), plt.yticks([])  # 隐藏 X轴 和 Y轴的标记位置和labels
     plt.show()
 
-    "Display Intermediate Steps and Save"
-    # ------------------------------------------------------------------------------#
-    # visualize_maps(image_stack, save=False)
-
-    "Compute Mean of Image Stack"
-    # ------------------------------------------------------------------------------#
-    # final_imageE = meanImage(image_stack, save=False)
-    os.chdir(cwd)
+    os.chdir(cwd)  # 重新切换到原来的系统路径

@@ -93,9 +93,11 @@ def test_show_bmp_histogram(image1, dtype, width, height, start_x, start_y, len_
     # array_bins = np.arange(0, 256, 255 / num)  # 等差数列数组支持任意个数组元素
     array_bins = np.array([0, 40, 100, 170, 250, 256])  # 特殊数组单独添加测试
     testimage_flatten = testimage.flatten()  # 将二维数组转成一维数组
+    # image_flatten = image.flatten()  # 将二维数组转成一维数组
     n = plt.hist(testimage_flatten, bins=array_bins)  # 第一个参数必须是一个一维数组
     np.set_printoptions(precision=1, suppress=True)  # 设置输出小数点位数 取消科学计数法
     print("平均灰度:", format(testimage_flatten.mean(), '.1f'))  # 上一句设置小数点位数对它无效，进行另外设置
+    # print("平均灰度1:", format(image_flatten.mean(), '.1f'))  # 上一句设置小数点位数对它无效，进行另外设置
     print("直方图统计个数:", n[0])
     percent = np.zeros(num)
     for i in range(0, num):
@@ -125,23 +127,71 @@ def test_show_bmp_histogram(image1, dtype, width, height, start_x, start_y, len_
     # cv.imwrite("../pic/123456.bmp", image)
 
 
+# 商米采图平均灰度计算
+def test_show_sm_histogram(image1, dtype, width, height, start_x1, start_y1, len_x1, len_y1, start_x2, start_y2, len_x2,
+                           len_y2, step):
+    image = rgbmage.read_bmpimage(image1, width, height, dtype)
+
+    # itemindex = np.where(image >= 255)
+    # print("sum", image.mean())
+    testimage1 = image[start_y1:(len_y1 + start_y1):step, start_x1:(len_x1 + start_x1):step]
+    testimage2 = image[start_y2:(len_y2 + start_y2):step, start_x2:(len_x2 + start_x2):step]
+    print("over exposure num:", str(testimage2.tolist()).count("255"))
+    y1, x1 = testimage1.shape
+    y2, x2 = testimage2.shape
+    # print(y1, x1, y2, x2)
+    sum1 = 0
+    sum2 = 0
+    np.set_printoptions(precision=1, suppress=True)  # 设置输出小数点位数 取消科学计数法
+    for i in range(6):
+        # print("i1=", i)
+        sum1 += int(testimage1[0:int(y1 / 6), int((i * x1) / 6):int((i + 1) * x1 / 6)].mean())
+        sum1 += int(testimage1[int((5 * y1) / 6):y1, int((i * x1) / 6):int((i + 1) * x1 / 6)].mean())
+
+    for i in range(1, 5):
+        # print("i2=", i)
+        sum1 += int(testimage1[int((i * y1) / 6):int(((i + 1) * y1) / 6), 0:int(x1 / 6)].mean())
+        # print("sum1", sum1 * 2)
+        sum1 += int(testimage1[int((i * y1) / 6):int(((i + 1) * y1) / 6), int((5 * x1) / 6):x1].mean())
+        # print("sum1", sum1 * 2)
+
+    for i in range(4):
+        # print("i3=", i)
+        sum2 += int(testimage2[0:int(y2 / 4), int((i * x2) / 4):int((i + 1) * x2 / 4)].mean())
+        # print("sum2", sum2 * 20)
+        sum2 += int(testimage2[int(y2 / 4):int(y2 / 2), int((i * x2) / 4):int((i + 1) * x2 / 4)].mean())
+        # print("sum2", sum2 * 20)
+        sum2 += int(testimage2[int(y2 / 2):int(3 * y2 / 4), int((i * x2) / 4):int((i + 1) * x2 / 4)].mean())
+        # print("sum2", sum2 * 20)
+        sum2 += int(testimage2[int(3 * y2 / 4):y2, int((i * x2) / 4):int((i + 1) * x2 / 4)].mean())
+        # print("sum2", sum2 * 20)
+    print("ave:", (sum1 * 2 + sum2 * 20) / 360)
+
+
 if __name__ == "__main__":
     print('This is main of module')
-    # file_name1 = "../pic/qrcode/pic_99.bmp"
-    # # file_name1 = "../pic/run/exp4/paper/7-1/pic_5.bmp"
-    # # get_statistcs_test()
+    # file_name1 = "C:/Users/syno/Desktop/tools/FwViewImageEx_V2.03/Imgs/000105.bmp"
+    file_name1 = "../pic/qrcode/pic_0.bmp"
+    # file_name1 = "../pic/qrcode/000090.bmp"
+    # get_statistcs_test()
     # test_show_bmp_histogram(file_name1, dtype="uint8", width=640, height=480, start_x=160, start_y=160, len_x=320,
-    #                         len_y=320, step_x=4, step_y=4, num=5, show=1)
+    #                         len_y=320, step_x=4, step_y=4, num=5, show=0)
 
-    for root, dirs, files in os.walk("../pic/qrcode/"):
+    test_show_sm_histogram(file_name1, dtype="uint8", width=640, height=480, start_x1=99, start_y1=75, len_x1=358,
+                           len_y1=270, start_x2=159, start_y2=120, len_x2=239, len_y2=180, step=4)
 
-        # root 表示当前正在访问的文件夹路径
-        # dirs 表示该文件夹下的子目录名list
-        # files 表示该文件夹下的文件list
+    # test_show_bmp_histogram(file_name1, dtype="uint8", width=640, height=480, start_x=160, start_y=160, len_x=320,
+    #                         len_y=320, step_x=4, step_y=4, num=255, show=1)
 
-        # 遍历文件
-        for f in files:
-            filename = os.path.join(root, f)
-            print(filename)
-            test_show_bmp_histogram(filename, dtype="uint8", width=640, height=480, start_x=160, start_y=160, len_x=320,
-                                    len_y=320, step_x=4, step_y=4, num=5, show=0)
+    # for root, dirs, files in os.walk("../pic/testfeedback/031/AD325-V0.0.0.8-20200914-2-50mm"):
+    #
+    #     # root 表示当前正在访问的文件夹路径
+    #     # dirs 表示该文件夹下的子目录名list
+    #     # files 表示该文件夹下的文件list
+    #
+    #     # 遍历文件
+    #     for f in files:
+    #         filename = os.path.join(root, f)
+    #         print(filename)
+    #         test_show_bmp_histogram(filename, dtype="uint8", width=640, height=480, start_x=160, start_y=160, len_x=320,
+    #                                 len_y=320, step_x=4, step_y=4, num=5, show=0)

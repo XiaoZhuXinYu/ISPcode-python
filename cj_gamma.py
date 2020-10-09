@@ -284,7 +284,7 @@ if __name__ == "__main__":
     # equ = cv.equalizeHist(image_gray)
     # cv.imwrite("../pic/gamma-equ/pic_100.bmp", equ)
     # rgbimage.rgb_image_show_color(ltmfile, maxvalue=255,  color="gray", compress_ratio=1)
-    for root, dirs, files in os.walk("../pic/gamma/"):
+    for root, dirs, files in os.walk("../pic/qrcode/"):
 
         # root 表示当前正在访问的文件夹路径
         # dirs 表示该文件夹下的子目录名list
@@ -293,14 +293,16 @@ if __name__ == "__main__":
         # 遍历文件
         for f in files:
             filename = os.path.join(root, f)
-            filename1 = "../pic/gamma-equ/" + filename[13:]
+            filename1 = "../pic/qrtest/" + filename[13:]
             # filename1 = "../pic/gamma-gamma3.4/" + filename[13:]
             image_gray = cv.imread(filename, cv.IMREAD_GRAYSCALE)  # 测试时文件夹中不要有txt文件
 
             tmp_gray = np.zeros(image_gray.shape)
-            tmp_gray[50:430, 50:590] = image_gray[50:430, 50:590]
+            # tmp_gray[50:430, 50:590] = image_gray[50:430, 50:590]
+            tmp_gray = image_gray
             gtmfile = sigmod_cr(tmp_gray, 4, 143)
-            image_gray[50:430, 50:590] = gtmfile[50:430, 50:590]
+            # image_gray[50:430, 50:590] = gtmfile[50:430, 50:590]
+            image_gray = gtmfile
 
             # gammafile = gamma_cr(image_gray, gamma=3.4)
             # equ = cv.equalizeHist(image_gray)
