@@ -91,7 +91,9 @@ gamma曲线拟合函数test_show_bf3a03_gamma 移动到对应的文件中。
 
 
 
-
+# 20201017 13:54
+1. 优化了 rgb_image_show_color 函数。同时兼容黑白和彩色。
+2. 优化了直方图统计函数 test_show_bmp_histogram，当计算全局直方图时，只计算一块的平均灰度。
 
 
 

@@ -4,7 +4,8 @@ import cv2 as cv
 
 
 def rgb_image_show_color(image, maxvalue=255,  color="color", compress_ratio=1):
-    height, width, c = image.shape
+    height = image.shape[0]
+    width = image.shape[1]
     x = width / (compress_ratio * 100)
     y = height / (compress_ratio * 100)
 

@@ -3,6 +3,7 @@ import cv2 as cv
 from scipy import interpolate
 from matplotlib import pyplot as plt
 import sys
+import cj_rgbimage as rgbimage
 import os
 
 
@@ -127,7 +128,7 @@ def gamma_cr(x, gamma):
     shape1 = x.shape
     x = x.flatten()
     y = x ** (1 / gamma)
-    y = y * (255.0/np.max(y))
+    y = y * (255.0 / np.max(y))
     y = y.astype(np.uint8)
     y.shape = shape1
     return y
@@ -277,39 +278,45 @@ if __name__ == "__main__":
     print('This is main of module')
     # test_show_bf3a03_gamma()
 
-    # x = np.arange(256)
-    # image_gray = cv.imread("../pic/gamma/pic_100.bmp", cv.IMREAD_GRAYSCALE)
-    # # gtmfile = sigmod_cr(image_gray, 4, 100)
+    x = np.arange(256)
+    image_gray = cv.imread("../pic/pic_0.bmp", cv.IMREAD_GRAYSCALE)
+    # gtmfile = sigmod_cr(image_gray, 4, 100)
     # ltmfile = LTM1(image_gray, maxvalue=2 ** 14, d=7, sigmaColor=0.8, sigmaSpace=10, new_scale=7)
+    clahe = cv.createCLAHE(clipLimit=4.0, tileGridSize=(8, 8))
+    cl1 = clahe.apply(image_gray)
+
     # equ = cv.equalizeHist(image_gray)
-    # cv.imwrite("../pic/gamma-equ/pic_100.bmp", equ)
-    # rgbimage.rgb_image_show_color(ltmfile, maxvalue=255,  color="gray", compress_ratio=1)
-    for root, dirs, files in os.walk("../pic/qrcode/"):
+    # gray = np.full((480, 640), 128)
+    # print(gray)
+    cv.imwrite("../pic/pic_clahe.bmp", cl1)
+    # rgbimage.rgb_image_show_color(equ, maxvalue=255, color="gray", compress_ratio=1)
 
-        # root 表示当前正在访问的文件夹路径
-        # dirs 表示该文件夹下的子目录名list
-        # files 表示该文件夹下的文件list
-
-        # 遍历文件
-        for f in files:
-            filename = os.path.join(root, f)
-            filename1 = "../pic/qrtest/" + filename[13:]
-            # filename1 = "../pic/gamma-gamma3.4/" + filename[13:]
-            image_gray = cv.imread(filename, cv.IMREAD_GRAYSCALE)  # 测试时文件夹中不要有txt文件
-
-            tmp_gray = np.zeros(image_gray.shape)
-            # tmp_gray[50:430, 50:590] = image_gray[50:430, 50:590]
-            tmp_gray = image_gray
-            gtmfile = sigmod_cr(tmp_gray, 4, 143)
-            # image_gray[50:430, 50:590] = gtmfile[50:430, 50:590]
-            image_gray = gtmfile
-
-            # gammafile = gamma_cr(image_gray, gamma=3.4)
-            # equ = cv.equalizeHist(image_gray)
-            # clahe = cv.createCLAHE(clipLimit=4.0, tileGridSize=(8, 8))
-            # cl1 = clahe.apply(image_gray)
-            # cv.imwrite(filename1, cl1)
-            cv.imwrite(filename1, image_gray)
-
-
-
+    # for root, dirs, files in os.walk("../pic/525/ok2"):
+    #
+    #     # root 表示当前正在访问的文件夹路径
+    #     # dirs 表示该文件夹下的子目录名list
+    #     # files 表示该文件夹下的文件list
+    #
+    #     # 遍历文件
+    #     for f in files:
+    #         filename = os.path.join(root, f)
+    #
+    #         filename1 = "../pic/median/ok2" + filename[14:]  # 14不是固定数字，和系统路径的长度有关
+    #         print(filename, filename1)
+    #         # filename1 = "../pic/gamma-gamma3.4/" + filename[13:]
+    #         image_gray = cv.imread(filename, cv.IMREAD_GRAYSCALE)  # 测试时文件夹中不要有txt文件
+    #
+    #         tmp_gray = np.zeros(image_gray.shape)
+    #         # tmp_gray[50:430, 50:590] = image_gray[50:430, 50:590]
+    #         tmp_gray = image_gray
+    #         # gtmfile = sigmod_cr(tmp_gray, 4, 143)
+    #         # image_gray[50:430, 50:590] = gtmfile[50:430, 50:590]
+    #         # image_gray = gtmfile
+    #
+    #         # gammafile = gamma_cr(image_gray, gamma=3.4)
+    #         # equ = cv.equalizeHist(image_gray)
+    #         # clahe = cv.createCLAHE(clipLimit=4.0, tileGridSize=(8, 8))
+    #         # cl1 = clahe.apply(image_gray)
+    #
+    #         cv.medianBlur(image_gray, 3, tmp_gray)  # 中值滤波
+    #         cv.imwrite(filename1, tmp_gray)

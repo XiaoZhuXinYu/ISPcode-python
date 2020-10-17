@@ -91,9 +91,10 @@ def test_show_bmp_histogram(image1, dtype, width, height, start_x, start_y, len_
     image = rgbmage.read_bmpimage(image1, width, height, dtype)
     testimage = image[start_y:(len_y + start_y):step_y, start_x:(len_x + start_x):step_x]
     # array_bins = np.arange(0, 256, 255 / num)  # 等差数列数组支持任意个数组元素
+    # image_flatten = image.flatten()  # 将二维数组转成一维数组
+
     array_bins = np.array([0, 40, 100, 170, 250, 256])  # 特殊数组单独添加测试
     testimage_flatten = testimage.flatten()  # 将二维数组转成一维数组
-    # image_flatten = image.flatten()  # 将二维数组转成一维数组
     n = plt.hist(testimage_flatten, bins=array_bins)  # 第一个参数必须是一个一维数组
     np.set_printoptions(precision=1, suppress=True)  # 设置输出小数点位数 取消科学计数法
     print("平均灰度:", format(testimage_flatten.mean(), '.1f'))  # 上一句设置小数点位数对它无效，进行另外设置
@@ -113,17 +114,18 @@ def test_show_bmp_histogram(image1, dtype, width, height, start_x, start_y, len_
         plt.title('histogram')
         plt.show()
 
-    testimage = image[0:start_y:step_y, 0:width:step_x]
-    testimage_flatten = testimage.flatten()  # 将二维数组转成一维数组
-    print("ave1:", format(testimage_flatten.mean(), '.1f'))
+    if start_x > 0 or start_y > 0:
+        testimage = image[0:start_y:step_y, 0:width:step_x]
+        testimage_flatten = testimage.flatten()  # 将二维数组转成一维数组
+        print("ave1:", format(testimage_flatten.mean(), '.1f'))
 
-    testimage = image[start_y:height:step_y, 0:start_x:step_x]
-    testimage_flatten = testimage.flatten()  # 将二维数组转成一维数组
-    print("ave2:", format(testimage_flatten.mean(), '.1f'))
+        testimage = image[start_y:height:step_y, 0:start_x:step_x]
+        testimage_flatten = testimage.flatten()  # 将二维数组转成一维数组
+        print("ave2:", format(testimage_flatten.mean(), '.1f'))
 
-    testimage = image[start_y:height:step_y, (start_x + len_x):width:step_x]
-    testimage_flatten = testimage.flatten()  # 将二维数组转成一[[维数组
-    print("ave4:", format(testimage_flatten.mean(), '.1f'))
+        testimage = image[start_y:height:step_y, (start_x + len_x):width:step_x]
+        testimage_flatten = testimage.flatten()  # 将二维数组转成一[[维数组
+        print("ave4:", format(testimage_flatten.mean(), '.1f'))
     # cv.imwrite("../pic/123456.bmp", image)
 
 
@@ -177,21 +179,27 @@ if __name__ == "__main__":
     # test_show_bmp_histogram(file_name1, dtype="uint8", width=640, height=480, start_x=160, start_y=160, len_x=320,
     #                         len_y=320, step_x=4, step_y=4, num=5, show=0)
 
-    test_show_sm_histogram(file_name1, dtype="uint8", width=640, height=480, start_x1=99, start_y1=75, len_x1=358,
-                           len_y1=270, start_x2=159, start_y2=120, len_x2=239, len_y2=180, step=4)
+    # test_show_bmp_histogram(file_name1, dtype="uint8", width=640, height=480, start_x=0, start_y=0, len_x=640,
+    #                         len_y=480, step_x=2, step_y=2, num=5, show=1)
+
+    # test_show_sm_histogram(file_name1, dtype="uint8", width=640, height=480, start_x1=99, start_y1=75, len_x1=358,
+    #                        len_y1=270, start_x2=159, start_y2=120, len_x2=239, len_y2=180, step=4)
 
     # test_show_bmp_histogram(file_name1, dtype="uint8", width=640, height=480, start_x=160, start_y=160, len_x=320,
     #                         len_y=320, step_x=4, step_y=4, num=255, show=1)
 
-    # for root, dirs, files in os.walk("../pic/testfeedback/031/AD325-V0.0.0.8-20200914-2-50mm"):
-    #
-    #     # root 表示当前正在访问的文件夹路径
-    #     # dirs 表示该文件夹下的子目录名list
-    #     # files 表示该文件夹下的文件list
-    #
-    #     # 遍历文件
-    #     for f in files:
-    #         filename = os.path.join(root, f)
-    #         print(filename)
-    #         test_show_bmp_histogram(filename, dtype="uint8", width=640, height=480, start_x=160, start_y=160, len_x=320,
-    #                                 len_y=320, step_x=4, step_y=4, num=5, show=0)
+    for root, dirs, files in os.walk("../pic/qrcode"):
+
+        # root 表示当前正在访问的文件夹路径
+        # dirs 表示该文件夹下的子目录名list
+        # files 表示该文件夹下的文件list
+
+        # 遍历文件
+        for f in files:
+            filename = os.path.join(root, f)
+            print(filename)
+            # test_show_bmp_histogram(filename, dtype="uint8", width=640, height=480, start_x=160, start_y=160, len_x=320,
+            #                         len_y=320, step_x=4, step_y=4, num=5, show=0)
+            test_show_bmp_histogram(filename, dtype="uint8", width=640, height=480, start_x=0, start_y=0, len_x=640,
+                                    len_y=480, step_x=2, step_y=2, num=5, show=0)
+
