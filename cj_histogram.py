@@ -1,4 +1,5 @@
 import numpy as np
+import cv2 as cv
 import os
 import matplotlib.pyplot as plt
 import cj_rawimage as rawimage
@@ -170,10 +171,25 @@ def test_show_sm_histogram(image1, dtype, width, height, start_x1, start_y1, len
     print("ave:", (sum1 * 2 + sum2 * 20) / 360)
 
 
+# 比较两个图的区别
+def test_show_picdiff_histogram(image1, image2, dtype, width, height):
+    image_1 = rgbmage.read_bmpimage(image1, width, height, dtype)
+    image_2 = rgbmage.read_bmpimage(image2, width, height, dtype)
+    image = image_2 - image_1
+    rgbmage.rgb_image_show_color(image, maxvalue=255, color="gray", compress_ratio=1)
+    return image
+
+
 if __name__ == "__main__":
     print('This is main of module')
     # file_name1 = "C:/Users/syno/Desktop/tools/FwViewImageEx_V2.03/Imgs/000105.bmp"
-    file_name1 = "../pic/qrcode/pic_0.bmp"
+    file_name1 = "../pic/qrcode/65.bmp"
+    file_name2 = "../pic/qrcode/pic_27.bmp"
+    file_name3 = "../pic/qrcode/pic_92.bmp"
+
+    test_show_bmp_histogram(file_name2, dtype="uint8", width=640, height=480, start_x=0, start_y=0, len_x=640,
+                            len_y=480, step_x=1, step_y=1, num=5, show=0)
+
     # file_name1 = "../pic/qrcode/000090.bmp"
     # get_statistcs_test()
     # test_show_bmp_histogram(file_name1, dtype="uint8", width=640, height=480, start_x=160, start_y=160, len_x=320,
@@ -188,18 +204,20 @@ if __name__ == "__main__":
     # test_show_bmp_histogram(file_name1, dtype="uint8", width=640, height=480, start_x=160, start_y=160, len_x=320,
     #                         len_y=320, step_x=4, step_y=4, num=255, show=1)
 
-    for root, dirs, files in os.walk("../pic/qrcode"):
-
-        # root 表示当前正在访问的文件夹路径
-        # dirs 表示该文件夹下的子目录名list
-        # files 表示该文件夹下的文件list
-
-        # 遍历文件
-        for f in files:
-            filename = os.path.join(root, f)
-            print(filename)
-            # test_show_bmp_histogram(filename, dtype="uint8", width=640, height=480, start_x=160, start_y=160, len_x=320,
-            #                         len_y=320, step_x=4, step_y=4, num=5, show=0)
-            test_show_bmp_histogram(filename, dtype="uint8", width=640, height=480, start_x=0, start_y=0, len_x=640,
-                                    len_y=480, step_x=2, step_y=2, num=5, show=0)
+    # for root, dirs, files in os.walk("../pic/qrcode/4mil-5"):
+    #
+    #     # root 表示当前正在访问的文件夹路径
+    #     # dirs 表示该文件夹下的子目录名list
+    #     # files 表示该文件夹下的文件list
+    #
+    #     # 遍历文件
+    #     for f in files:
+    #         filename = os.path.join(root, f)
+    #         print(filename)
+    #         # test_show_bmp_histogram(filename, dtype="uint8", width=640, height=480, start_x=160, start_y=160, len_x=320,
+    #         #                         len_y=320, step_x=4, step_y=4, num=5, show=0)
+    #         # test_show_bmp_histogram(filename, dtype="uint8", width=640, height=480, start_x=0, start_y=0, len_x=640,
+    #         #                         len_y=480, step_x=2, step_y=2, num=5, show=0)
+    #         test_show_sm_histogram(filename, dtype="uint8", width=640, height=480, start_x1=100, start_y1=75,
+    #                                len_x1=360, len_y1=270, start_x2=160, start_y2=120, len_x2=240, len_y2=180, step=4)
 

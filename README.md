@@ -97,7 +97,9 @@ gamma曲线拟合函数test_show_bf3a03_gamma 移动到对应的文件中。
 
 
 
-
+# 20201204 17:22
+1. 增加了一个函数 test_show_picdiff_histogram。
+2. 增加了一个 rgb2gray 函数。
 
 
  

@@ -166,11 +166,11 @@ def rgb2xyz(data, color_space="srgb", clip_range=[0, 65535]):
         output[:, :, 2] = data[:, :, 0] * 0.0270343 + data[:, :, 1] * 0.0706872 + data[:, :, 2] * 0.9911085
 
     elif color_space == "linear":
+        data = np.float32(data)
+        data = np.divide(data, clip_range[1])
 
         # matrix multiplication`
         output = np.empty(np.shape(data), dtype=np.float32)
-        data = np.float32(data)
-        data = np.divide(data, clip_range[1])
         output[:, :, 0] = data[:, :, 0] * 0.4124 + data[:, :, 1] * 0.3576 + data[:, :, 2] * 0.1805
         output[:, :, 1] = data[:, :, 0] * 0.2126 + data[:, :, 1] * 0.7152 + data[:, :, 2] * 0.0722
         output[:, :, 2] = data[:, :, 0] * 0.0193 + data[:, :, 1] * 0.1192 + data[:, :, 2] * 0.9505

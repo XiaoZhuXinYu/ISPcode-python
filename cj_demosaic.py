@@ -1,6 +1,7 @@
 import cj_rawimage as rawimage
 import cj_yuvimage as yuvimage
 import cj_rgbimage as rgbimage
+import cj_csc as csc
 from scipy import signal
 import numpy as np
 import cv2 as cv
@@ -399,8 +400,8 @@ def AHD(img, pattern, delta=2, gamma=1, maxvalue=255):  # delta是用来调试 a
     Yx = AH_interpolateX(f, pattern, gamma, maxvalue)  # 对x方向进行插值,得到的是含有RGB三个分量的数据
     Yy = AH_interpolateY(f, pattern, gamma, maxvalue)  # 对y方向进行插值,得到的是含有RGB三个分量的数据
     # 转LAB
-    YxLAB = yuvimage.rgb2lab(Yx)
-    YyLAB = yuvimage.rgb2lab(Yy)
+    YxLAB = csc.rgb2lab(Yx)
+    YyLAB = csc.rgb2lab(Yy)
     # 色彩差异的运算
     epsilonL, epsilonC = MNparamA(YxLAB, YyLAB)  # 计算亮度差和色差，和imatest相似
     Hx = MNhomogeneity(YxLAB, delta, epsilonL, epsilonC)  # homogeneity 同质性，计算相似度，找到周围有几个像素点和该点相似
@@ -461,7 +462,7 @@ def test_demosaic(image,  pattern, method="ahd"):
     cvimage[:, :, 0] = result[:, :, 2]
     cvimage[:, :, 1] = result[:, :, 1]
     cvimage[:, :, 2] = result[:, :, 0]
-    cv.imwrite(method + "-demosaic.bmp", cvimage)
+    cv.imwrite("../pic/demosaic/" + method + "-demosaic.bmp", cvimage)
     return
 
 
@@ -481,6 +482,6 @@ if __name__ == "__main__":
     image = rawimage.read_plained_file(file_name, dtype="uint16", width=512, height=768, shift_bits=0)
     h, w = image.shape
     rawimage.show_planedraw(image, w, h, pattern="gray", sensorbit=8, compress_ratio=1)
-    test_demosaic(image, pattern, method="blinnear")
+    test_demosaic(image, pattern, method="ahd")
 
 

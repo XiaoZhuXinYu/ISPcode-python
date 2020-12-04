@@ -42,12 +42,18 @@ def rgb_separation(image):
     return R, G, B
 
 
+def rgb2gray(path):
+    length = len(path)
+    image = cv.imread(path, cv.IMREAD_GRAYSCALE)
+    cv.imwrite(path[:length-4] + "-gray.bmp", image)
+
+
 if __name__ == "__main__":
     print('This is main of module')
     # file_name1 = "../pic/GAIN7EXP2.0_0.bmp"
-    file_name1 = "../pic/pic_14.bmp"
-
-    image = read_bmpimage(file_name1, 640, 480, dtype="uint8")
-    rgb_image_show_color(image, maxvalue=255, color="color", compress_ratio=1)
+    file_name1 = "../pic/demosaic/blinnear-demosaic.bmp"
+    rgb2gray(file_name1)
+    # image = read_bmpimage(file_name1, 640, 480, dtype="uint8")
+    # rgb_image_show_color(image, maxvalue=255, color="color", compress_ratio=1)
 
 
