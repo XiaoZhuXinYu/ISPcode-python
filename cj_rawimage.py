@@ -4,11 +4,12 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 
-def read_plained_file(file_path_name, dtype, width, height, shift_bits):
+def read_plained_file(file_path_name, dtype, width, height, dataformat):
     frame = np.fromfile(file_path_name, dtype=dtype)  # 相比于open，该函数可以指定数据类型
     frame = frame[0:height * width]  # 这句是为了防止图像中有无效数据
     frame.shape = [height, width]  # 将数组转化为二维矩阵
-    frame = np.right_shift(frame, shift_bits)  # 考虑数据大小端问题，进行移位
+    if dataformat == "ieee-be":  # 考虑数据大小端问题，进行移位, 将大端存储的数据转为小端存储
+        frame = np.right_shift(frame, 8) | np.left_shift(frame & 0xff, 8)
     return frame
 
 
@@ -33,28 +34,28 @@ def simple_separation(image):
 # 带颜色通道的分离
 def bayer_channel_separation(data, pattern):
     image_data = data
-    if pattern == "RGGB":
+    if pattern == "rggb":
         R = image_data[::2, ::2]
         GR = image_data[::2, 1::2]
         GB = image_data[1::2, ::2]
         B = image_data[1::2, 1::2]
-    elif pattern == "GRBG":
+    elif pattern == "grbg":
         GR = image_data[::2, ::2]
         R = image_data[::2, 1::2]
         B = image_data[1::2, ::2]
         GB = image_data[1::2, 1::2]
-    elif pattern == "GBRG":
+    elif pattern == "gbrg":
         GB = image_data[::2, ::2]
         B = image_data[::2, 1::2]
         R = image_data[1::2, ::2]
         GR = image_data[1::2, 1::2]
-    elif pattern == "BGGR":
+    elif pattern == "bggr":
         B = image_data[::2, ::2]
         GB = image_data[::2, 1::2]
         GR = image_data[1::2, ::2]
         R = image_data[1::2, 1::2]
     else:
-        print("pattern must be one of :  RGGB, GBRG, GBRG, or BGGR")
+        print("pattern must be one of :  rggb, grbg, gbrg, or bggr")
         return
     G = (GR + GB) / 2
     return R, GR, GB, B, G
@@ -76,17 +77,17 @@ def bayer_channel_integration(R, GR, GB, B, pattern):
     size = np.shape(R)
     data = np.empty((size[0] * 2, size[1] * 2), dtype=np.float32)
     # casually use float32,maybe change later
-    if pattern == "RGGB":
+    if pattern == "rggb":
         data[::2, ::2] = R
         data[::2, 1::2] = GR
         data[1::2, ::2] = GB
         data[1::2, 1::2] = B
-    elif pattern == "GRBG":
+    elif pattern == "grbg":
         data[::2, ::2] = GR
         data[::2, 1::2] = R
         data[1::2, ::2] = B
         data[1::2, 1::2] = GB
-    elif pattern == "GBRG":
+    elif pattern == "gbrg":
         data[::2, ::2] = GB
         data[::2, 1::2] = B
         data[1::2, ::2] = R
@@ -125,22 +126,22 @@ def raw_image_show_fakecolor(image,  width, height, pattern, compress_ratio=1): 
 
     # R, GR, GB, B = bayer_channel_separation(image, pattern)  # 未测试过是否可以替代下面的判断语句
 
-    if pattern == "RGGB":
+    if pattern == "rggb":
         R[::2, ::2] = image[::2, ::2]
         GR[::2, 1::2] = image[::2, 1::2]
         GB[1::2, ::2] = image[1::2, ::2]
         B[1::2, 1::2] = image[1::2, 1::2]
-    elif pattern == "GRBG":
+    elif pattern == "grbg":
         GR[::2, ::2] = image[::2, ::2]
         R[::2, 1::2] = image[::2, 1::2]
         B[1::2, ::2] = image[1::2, ::2]
         GB[1::2, 1::2] = image[1::2, 1::2]
-    elif pattern == "GBRG":
+    elif pattern == "gbrg":
         GB[::2, ::2] = image[::2, ::2]
         B[::2, 1::2] = image[::2, 1::2]
         R[1::2, ::2] = image[1::2, ::2]
         GR[1::2, 1::2] = image[1::2, 1::2]
-    elif pattern == "BGGR":
+    elif pattern == "bggr":
         B[::2, ::2] = image[::2, ::2]
         GB[::2, 1::2] = image[::2, 1::2]
         GR[1::2, ::2] = image[1::2, ::2]
@@ -260,7 +261,7 @@ def raw_image_show_3D(image, width, height, sensorbit, compress_ratio=1):
 
 if __name__ == "__main__":
     print('This is main of module')
-    file_name1 = "../pic/BayerRGGB_1920_1080_12bits_D65-6450.raw"
-    iamge = read_plained_file(file_name1, dtype="uint16", width=1920, height=1080, shift_bits=0)
-    show_planedraw(iamge, 1920, 1080, pattern="RGGB", sensorbit=12, compress_ratio=1)
+    file_name1 = "E:/winshare/imageprocessing/opencv/python/04/ISPcode-python/pic/D50-4710.raw"
+    iamge = read_plained_file(file_name1, dtype="uint16", width=1920, height=1080, shift_bits=8)
+    show_planedraw(iamge, 1920, 1080, pattern="rggb", sensorbit=12, compress_ratio=1)
     # # show_mipiraw_mipi10()

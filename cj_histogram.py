@@ -184,13 +184,13 @@ if __name__ == "__main__":
     print('This is main of module')
     # file_name1 = "C:/Users/syno/Desktop/tools/FwViewImageEx_V2.03/Imgs/000105.bmp"
     file_name1 = "../pic/qrcode/65.bmp"
-    file_name2 = "../pic/qrcode/pic_27.bmp"
+    file_name2 = "pic/testimage.bmp"
     file_name3 = "../pic/qrcode/pic_92.bmp"
 
     test_show_bmp_histogram(file_name2, dtype="uint8", width=640, height=480, start_x=0, start_y=0, len_x=640,
-                            len_y=480, step_x=1, step_y=1, num=5, show=0)
-    test_show_sm_histogram(file_name1, dtype="uint8", width=640, height=480, start_x1=99, start_y1=75, len_x1=358,
-                           len_y1=270, start_x2=159, start_y2=120, len_x2=239, len_y2=180, step=4)
+                            len_y=480, step_x=1, step_y=1, num=5, show=1)
+    # test_show_sm_histogram(file_name1, dtype="uint8", width=640, height=480, start_x1=99, start_y1=75, len_x1=358,
+    #                        len_y1=270, start_x2=159, start_y2=120, len_x2=239, len_y2=180, step=4)
 
     # file_name1 = "../pic/qrcode/000090.bmp"
     # get_statistcs_test()

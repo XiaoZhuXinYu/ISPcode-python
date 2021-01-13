@@ -1,4 +1,7 @@
 __pycache__/
+build/
+dist/
+pic/
 *.bmp
 *.png
 *.jpg

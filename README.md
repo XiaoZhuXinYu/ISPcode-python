@@ -106,4 +106,12 @@ gamma曲线拟合函数test_show_bf3a03_gamma 移动到对应的文件中。
 1. 增加了ui相关文件，提交一个临时版本。
 
 
+# 20210113 14:14
+1. 删除了3个测试用的ui文件。
+2. cj_rawimage.py 中，修改了大小端数据的处理。以及图像格式RGGB改成rggb等。
+3. 添加了 cj_ui_isp.py cj_ui_cmos_dynamic_range.py cj_ui_cmos_snr.py cj_ui_cmos_temporal_noise.py 四个文件以及对应的ui文件。
+
+
+
+
  
