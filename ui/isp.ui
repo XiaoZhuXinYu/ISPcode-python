@@ -328,7 +328,7 @@
        <rect>
         <x>40</x>
         <y>40</y>
-        <width>75</width>
+        <width>81</width>
         <height>23</height>
        </rect>
       </property>
@@ -360,6 +360,71 @@
       </property>
       <property name="text">
        <string>Temporal Noise</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_fpn">
+      <property name="geometry">
+       <rect>
+        <x>370</x>
+        <y>40</y>
+        <width>71</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>FPN</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_dsnu">
+      <property name="geometry">
+       <rect>
+        <x>460</x>
+        <y>40</y>
+        <width>101</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>DSNU</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_prnu">
+      <property name="geometry">
+       <rect>
+        <x>590</x>
+        <y>40</y>
+        <width>101</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>PRNU</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_sensitivity">
+      <property name="geometry">
+       <rect>
+        <x>40</x>
+        <y>80</y>
+        <width>81</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>sensitivity</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_illumination">
+      <property name="geometry">
+       <rect>
+        <x>140</x>
+        <y>80</y>
+        <width>91</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>illumination</string>
       </property>
      </widget>
     </widget>

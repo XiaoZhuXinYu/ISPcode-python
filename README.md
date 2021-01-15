@@ -112,6 +112,9 @@ gamma曲线拟合函数test_show_bf3a03_gamma 移动到对应的文件中。
 3. 添加了 cj_ui_isp.py cj_ui_cmos_dynamic_range.py cj_ui_cmos_snr.py cj_ui_cmos_temporal_noise.py 四个文件以及对应的ui文件。
 
 
+# 20210115 18:04
+1. 增加了 dsnu prnu fpn illumination sensitivity 相关的ui文件和py文件。
+2. cj_ui_isp.py 和 isp.ui 配合上面的五个功能做了对应的修改。
 
 
  

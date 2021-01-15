@@ -8,10 +8,21 @@ import cj_histogram as histogram
 import cj_ui_cmos_snr as snr
 import cj_ui_cmos_dynamic_range as dyrange
 import cj_ui_cmos_temporal_noise as tempnoise
+import cj_ui_cmos_fpn as fpn
+import cj_ui_cmos_dsnu as dsnu
+import cj_ui_cmos_prnu as prnu
+import cj_ui_cmos_sensitivity as sensitivity
+import cj_ui_cmos_illumination as illumination
 
-cmossnr_win = None
-cmosdyrange_win = None
-cmostempnoise_win = None
+
+cmos_snr_win = None
+cmos_dyrange_win = None
+cmos_tempnoise_win = None
+cmos_fpn_win = None
+cmos_dsnu_win = None
+cmos_prnu_win = None
+cmos_sensitivity_win = None
+cmos_illumination_win = None
 
 
 class Stats:
@@ -69,6 +80,11 @@ class Stats:
         self.ui.pushButton_snr_linear.clicked.connect(self.handle_pushButton_snr_linear_clicked)
         self.ui.pushButton_dynamicrange.clicked.connect(self.handle_pushButton_dynamicrange_clicked)
         self.ui.pushButton_temporalnoise.clicked.connect(self.handle_pushButton_temporalnoise_clicked)
+        self.ui.pushButton_fpn.clicked.connect(self.handle_pushButton_fpn_clicked)
+        self.ui.pushButton_dsnu.clicked.connect(self.handle_pushButton_dsnu_clicked)
+        self.ui.pushButton_prnu.clicked.connect(self.handle_pushButton_prnu_clicked)
+        self.ui.pushButton_sensitivity.clicked.connect(self.handle_pushButton_sensitivity_clicked)
+        self.ui.pushButton_illumination.clicked.connect(self.handle_pushButton_illumination_clicked)
 
         # other page
         self.ui.pushButton_isppipeline.clicked.connect(self.isppipeline_pushButton_clicked)
@@ -140,22 +156,52 @@ class Stats:
 
     # CmosSensor
     def handle_pushButton_snr_linear_clicked(self):
-        global cmossnr_win
+        global cmos_snr_win
         print("snr pushButton clicked", self)
-        cmossnr_win = snr.SNR()
-        cmossnr_win.ui.show()
+        cmos_snr_win = snr.SNR()
+        cmos_snr_win.ui.show()
 
     def handle_pushButton_dynamicrange_clicked(self):
-        global cmosdyrange_win
+        global cmos_dyrange_win
         print("dynamic range pushButton clicked", self)
-        cmosdyrange_win = dyrange.DynamicRange()
-        cmosdyrange_win.ui.show()
+        cmos_dyrange_win = dyrange.DynamicRange()
+        cmos_dyrange_win.ui.show()
 
     def handle_pushButton_temporalnoise_clicked(self):
-        global cmostempnoise_win
+        global cmos_tempnoise_win
         print("temporal noise pushButton clicked", self)
-        cmostempnoise_win = tempnoise.TemporalNoise()
-        cmostempnoise_win.ui.show()
+        cmos_tempnoise_win = tempnoise.TemporalNoise()
+        cmos_tempnoise_win.ui.show()
+
+    def handle_pushButton_fpn_clicked(self):
+        global cmos_fpn_win
+        print("fpn pushButton clicked", self)
+        cmos_fpn_win = fpn.FPN()
+        cmos_fpn_win.ui.show()
+
+    def handle_pushButton_dsnu_clicked(self):
+        global cmos_dsnu_win
+        print("dsnu pushButton clicked", self)
+        cmos_dsnu_win = dsnu.DSNU()
+        cmos_dsnu_win.ui.show()
+
+    def handle_pushButton_prnu_clicked(self):
+        global cmos_prnu_win
+        print("prnu pushButton clicked", self)
+        cmos_prnu_win = prnu.PRNU()
+        cmos_prnu_win.ui.show()
+
+    def handle_pushButton_sensitivity_clicked(self):
+        global cmos_sensitivity_win
+        print("sensitivity pushButton clicked", self)
+        cmos_sensitivity_win = sensitivity.SENSITIVITY()
+        cmos_sensitivity_win.ui.show()
+
+    def handle_pushButton_illumination_clicked(self):
+        global cmos_illumination_win
+        print("illumination pushButton clicked", self)
+        cmos_illumination_win = illumination.ILLUMINATION()
+        cmos_illumination_win.ui.show()
 
     # other page
     def isppipeline_pushButton_clicked(self, checked):
